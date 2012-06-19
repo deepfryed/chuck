@@ -1,0 +1,4 @@
+gems/
+.bundle/
+bin/*
+!bin/proxy
