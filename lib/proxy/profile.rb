@@ -6,6 +6,7 @@ class Proxy::Profile
   def process buffer
     rules.each do |re, callback|
       if match = re.match(buffer)
+        yield "rewriting request with #{match}" if block_given?
         buffer.sub!(re, callback.call(match))
         break
       end

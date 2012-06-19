@@ -22,7 +22,7 @@ class Proxy::Server
     profile = Proxy::Profile.new(options.fetch(:profile, nil))
     logger  = Logger.new(options.fetch(:log, $stderr), 0)
     logger.info "listening on #{host}:#{port}..."
-    logger.level = Logger::ERROR
+    logger.level = Logger::INFO
 
     Proxy.start(host: host, port: port) do |conn|
       @p = Http::Parser.new
@@ -32,7 +32,7 @@ class Proxy::Server
 
         host, port = h['Host'].split(':')
         conn.server session, host: host, port: (port || 80)
-        conn.relay_to_servers profile.process(@buffer)
+        conn.relay_to_servers profile.process(@buffer) {|message| logger.info message}
         @buffer.clear
       end
 
