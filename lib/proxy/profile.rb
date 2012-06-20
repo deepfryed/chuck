@@ -1,6 +1,6 @@
 class Proxy::Profile
-  def initialize file
-    setup(file)
+  def initialize files
+    setup(files)
   end
 
   def process buffer
@@ -15,9 +15,10 @@ class Proxy::Profile
   end
 
   private
-    def setup file
-      return unless file
-      instance_eval File.read(file)
+    def setup files
+      [files].flatten.each do |file|
+        instance_eval File.read(file)
+      end
     end
 
     def rewrite regex, &callback
@@ -27,4 +28,4 @@ class Proxy::Profile
     def rules
       @rules ||= {}
     end
-end
+end # Proxy::Profile

@@ -19,17 +19,20 @@ class OptionsParser
     options = {}
     while arg = list.shift
       case arg
+        when %r{^--(?<option>[^=]+)=(?<value>.+)}
+          option, value = $~[:option].to_sym, $~[:value]
+          options[option] = options[option] ? [options[option], value].flatten : value
         when %r{^--}
-          neg, opt = arg.sub(%r{^--}, '').scan(%r{^(no-)?(.+)$}).flatten
-          options[opt.to_sym] = !neg
+          neg, option = arg.sub(%r{^--}, '').scan(%r{^(no-)?(.+)$}).flatten
+          options[option.to_sym] = !neg
         else
           case arg
             when /^\d+$/       then arg = arg.to_i
             when /^\d+\.\d+$/  then arg = arg.to_f
           end
 
-          opt = list.shift.sub(%r{^--}, '').to_sym
-          options[opt] = options[opt] ? [options[opt], arg].flatten : arg
+          option = list.shift.sub(%r{^--}, '').to_sym
+          options[option] = options[option] ? [options[option], arg].flatten : arg
       end
     end
     options
