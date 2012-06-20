@@ -11,8 +11,9 @@ require 'proxy/profile'
 require 'options_parser'
 
 class Proxy::Server
-
   attr_reader :profile, :host, :port, :options
+
+  SEPERATOR = '~' * 80
 
   def initialize
     @options = OptionsParser.new(ARGV).options
@@ -62,7 +63,8 @@ class Proxy::Server
           conn.relay_to_servers @b
           @b.clear
         rescue => e
-          logger.error "request: #{@b} - #{e}"
+          conn.unbind_backend
+          logger.error [e, SEPERATOR, 'REQUEST:', SEPERATOR, @b, SEPERATOR].join($/)
         end
       end
 
@@ -76,8 +78,8 @@ class Proxy::Server
           @p << data
           data
         rescue => e
-          conn.close_connection
-          logger.error "request: #{@b} - #{e}"
+          conn.unbind_backend
+          logger.error [e, SEPERATOR, 'REQUEST:', SEPERATOR, @b, SEPERATOR].join($/)
         end
       end
 
