@@ -34,6 +34,8 @@ class Proxy::Server
     exit
   end
 
+  HOST_PORT_RE = %r{^(?:GET|POST|PUT|DELETE|OPTIONS|TRACE)\s+https?://(?<host>[^/]+)/?(?:[^:]*)(?::(?<port>\d+)).*}i
+
   def run
     profile = Proxy::Profile.new(options.fetch(:profile, nil))
     logger  = Logger.new(options.fetch(:log, $stderr), 0)
@@ -46,9 +48,18 @@ class Proxy::Server
         session = UUID.generate
         logger.info "new session: #{session} (#{h.inspect})"
 
+        profile.process!(@buffer) {|message| logger.info message}
+
         host, port = h['Host'].split(':')
+
+        # rewrite Host header and connect endpoint.
+        if server = @buffer.match(HOST_PORT_RE)
+          host, port = $~[:host], $~[:port]
+          @buffer.sub! %r{^Host:\s+.*?\r\n}m, "Host: #{host}\r\n"
+        end
+
         conn.server session, host: host, port: (port || 80)
-        conn.relay_to_servers profile.process(@buffer) {|message| logger.info message}
+        conn.relay_to_servers @buffer
         @buffer.clear
       end
 

@@ -6,7 +6,7 @@ Something like Charles without the Java crap.
 ## Setup
 
 ```
-bundle --path gems
+bundle --path gems --binstubs
 ``` 
 
 ## Profile
@@ -16,14 +16,13 @@ You need to setup a profile for rewriting urls. You can find a sample in `profil
 ## Running
 
 ```
-# from down under, ymmv
-
-curl -v http://www.google.com -o /dev/null
-
-# another screen/terminal
+# terminal/screen 1
 ./bin/proxy --profile profiles/sample.rb 
 
-# switch screen/terminal
+# terminal/screen 2
+./bin/rackup -p 3000
+
+# terminal/screen 3
 curl -v http://www.google.com --proxy 127.0.0.1:9889 -o /dev/null
 ```
 
