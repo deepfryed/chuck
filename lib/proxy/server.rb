@@ -16,6 +16,22 @@ class Proxy::Server
     @options = OptionsParser.new(ARGV).options
     @host    = options.fetch(:host, '0.0.0.0')
     @port    = options.fetch(:port , 9889)
+
+    banner! if options[:help]
+  end
+
+  def banner!
+    puts <<-EOM
+
+      #{$0} [options]
+
+      --profile file
+      --host    host  # proxy host, default 0.0.0.0
+      --port    port  # proxy port, default 9889
+      --help
+
+    EOM
+    exit
   end
 
   def run
