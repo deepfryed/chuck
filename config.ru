@@ -17,6 +17,18 @@ class MyApp < Sinatra::Base
   get %r{.*} do
     JSON.pretty_generate(request_info)
   end
+
+  post %r{.*} do
+    JSON.pretty_generate(request_info)
+  end
+
+  put %r{.*} do
+    JSON.pretty_generate(request_info)
+  end
+
+  delete %r{.*} do
+    JSON.pretty_generate(request_info)
+  end
 end
 
 run MyApp

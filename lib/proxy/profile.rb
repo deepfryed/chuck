@@ -1,5 +1,6 @@
 class Proxy::Profile
   MAX_REWRITES = 5
+  SEPERATOR    = '~' * 80
 
   def initialize files
     setup(files)
@@ -11,9 +12,9 @@ class Proxy::Profile
     while index < rules.size && rewrite_count < MAX_REWRITES
       re, callback = rules[index - 1]
       if match = re.match(buffer)
-        log = ["rewriting request:", '', buffer.dup]
+        log = ["rewriting request:", SEPERATOR, buffer.dup, SEPERATOR]
         buffer.sub!(re, callback.call(match))
-        log << buffer.dup
+        log << buffer.dup << SEPERATOR
         yield log.join($/) if block_given?
 
         # restart the matching for cascaded rewriting.
@@ -35,8 +36,21 @@ class Proxy::Profile
       rules << [regex, callback]
     end
 
-    def map from, to
-      rules << [%r{\AGET #{from}(?<rest>.*)\z}m, proc {|match| "GET #{to}#{match[:rest]}"}]
+    def map *args, &callback
+      raise ArgumentError, "wrong number of arguments(#{args.size} for 2..3)" if args.size < 2 or args.size > 3
+      verb, from, to = args.size == 2 ? ['GET', *args] : args
+      verb = verb.to_s.upcase
+      re   = %r{\A#{verb} #{from}(?<rest>.*)\z}m
+
+      if callback
+        rewrite(re) do |match|
+          callback.call("#{verb} #{to}#{match[:rest]}")
+        end
+      else
+        rewrite(re) do |match|
+          "#{verb} #{to}#{match[:rest]}"
+        end
+      end
     end
 
     def rules
