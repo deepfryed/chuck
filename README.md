@@ -28,6 +28,10 @@ You need to setup a profile for rewriting urls. You can find a sample in `profil
 curl -v http://www.google.com/hello-world --proxy 127.0.0.1:9889
 ```
 
+## TODO
+
+* Support for SSL
+
 # See Also
 [https://github.com/igrigorik/em-proxy](https://github.com/igrigorik/em-proxy)
 
