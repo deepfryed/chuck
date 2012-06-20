@@ -1,13 +1,18 @@
 # Rewriting HTTP Proxy in Ruby
 
-Something like Charles without the Java crap.
+A debugging proxy like Charles written in plain Ruby. You can more than simple rewriting since everything
+is done in ruby.
 
+* You can add, modify or delete headers.
+* Do conditional rewrite based on request headers.
+* Combine multiple profiles, chain rules.
+* Generally, be more creative and productive.
 
 ## Setup
 
 ```
 bundle --path gems --binstubs
-``` 
+```
 
 ## Profile
 
@@ -17,13 +22,10 @@ You need to setup a profile for rewriting urls. You can find a sample in `profil
 
 ```
 # terminal/screen 1
-./bin/proxy --profile profiles/sample.rb 
+./bin/foreman start
 
 # terminal/screen 2
-./bin/rackup -p 3000
-
-# terminal/screen 3
-curl -v http://www.google.com --proxy 127.0.0.1:9889 -o /dev/null
+curl -v http://www.google.com/hello-world --proxy 127.0.0.1:9889
 ```
 
 # See Also
