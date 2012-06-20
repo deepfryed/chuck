@@ -62,8 +62,7 @@ class Proxy::Server
           conn.relay_to_servers @b
           @b.clear
         rescue => e
-          logger.error e
-          logger.error e.backtrace.join($/)
+          logger.error "request: #{@b} - #{e}"
         end
       end
 
@@ -78,8 +77,7 @@ class Proxy::Server
           data
         rescue => e
           conn.close_connection
-          logger.error e
-          logger.error e.backtrace.join($/)
+          logger.error "request: #{@b} - #{e}"
         end
       end
 
