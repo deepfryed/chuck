@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+# Based on https://github.com/igrigorik/em-proxy/raw/master/examples/http_proxy.rb
+
 require 'bundler/setup'
 require 'em-proxy'
 require 'http/parser'
@@ -43,41 +45,47 @@ class Proxy::Server
     logger.level = Logger::INFO
 
     Proxy.start(host: host, port: port) do |conn|
+      @b = ''
       @p = Http::Parser.new
       @p.on_headers_complete = proc do |h|
-        session = UUID.generate
-        logger.info "new session: #{session} (#{h.inspect})"
+        begin
+          profile.process!(@b) {|message| logger.info message}
 
-        profile.process!(@buffer) {|message| logger.info message}
+          host, port = h['Host'].split(':')
+          # rewrite Host header and connect endpoint.
+          if server = @b.match(HOST_PORT_RE)
+            host, port = $~[:host], $~[:port]
+            @b.sub! %r{^Host:\s+.*?\r\n}m, "Host: #{host}\r\n"
+          end
 
-        host, port = h['Host'].split(':')
-
-        # rewrite Host header and connect endpoint.
-        if server = @buffer.match(HOST_PORT_RE)
-          host, port = $~[:host], $~[:port]
-          @buffer.sub! %r{^Host:\s+.*?\r\n}m, "Host: #{host}\r\n"
+          conn.server UUID.generate, host: host, port: (port || 80)
+          conn.relay_to_servers @b
+          @b.clear
+        rescue => e
+          logger.error e
+          logger.error e.backtrace.join($/)
         end
-
-        conn.server session, host: host, port: (port || 80)
-        conn.relay_to_servers @buffer
-        @buffer.clear
       end
-
-      @buffer = ''
 
       conn.on_connect do |data, b|
         logger.debug ":on_connect | #{data} | #{b}"
       end
 
       conn.on_data do |data|
-        @buffer << data
-        @p << data
-        data
+        begin
+          @b << data
+          @p << data
+          data
+        rescue => e
+          conn.close_connection
+          logger.error e
+          logger.error e.backtrace.join($/)
+        end
       end
 
-      conn.on_response do |backend, resp|
-        logger.debug ":on_connect | #{backend} | #{resp}"
-        resp
+      conn.on_response do |backend, res|
+        logger.debug ":on_connect | #{backend} | #{res}"
+        res
       end
 
       conn.on_finish do |backend, name|
