@@ -40,15 +40,16 @@ class Proxy::Profile
       raise ArgumentError, "wrong number of arguments(#{args.size} for 2..3)" if args.size < 2 or args.size > 3
       verb, from, to = args.size == 2 ? ['GET', *args] : args
       verb = verb.to_s.upcase
-      re   = %r{\A#{verb} #{from}?(?::\d+)?(?<rest>.*)\z}m
+      port = from.match(%r{https://}i) ? 443 : 80
+      re   = %r{\A#{verb} #{from}(?<port>:#{port})?(?<path>/[^\s]*)? (?<rest>.+)\z}m
 
       if callback
         rewrite(re) do |match|
-          callback.call("#{verb} #{to}#{match[:rest]}")
+          callback.call("#{verb} #{to}#{match[:path]} #{match[:rest]}")
         end
       else
         rewrite(re) do |match|
-          "#{verb} #{to}#{match[:rest]}"
+          "#{verb} #{to}#{match[:path]} #{match[:rest]}"
         end
       end
     end
