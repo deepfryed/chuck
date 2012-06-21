@@ -46,25 +46,27 @@ class Proxy::Server
     logger.level = Logger::INFO
 
     Proxy.start(host: host, port: port) do |conn|
-      @b = ''
-      @p = Http::Parser.new
-      @p.on_headers_complete = proc do |h|
+      session = ''
+      payload = ''
+      parser  = Http::Parser.new
+      parser.on_headers_complete = proc do |h|
         begin
-          profile.process!(@b) {|message| logger.info message}
+          session = UUID.generate
+          profile.process!(payload) {|message| logger.info message}
 
           host, port = h['Host'].split(':')
           # rewrite Host header and connect endpoint.
-          if server = @b.match(HOST_PORT_RE)
+          if server = payload.match(HOST_PORT_RE)
             host, port = $~[:host], $~[:port]
-            @b.sub! %r{^Host:\s+.*?\r\n}m, "Host: #{host}\r\n"
+            payload.sub! %r{^Host:\s+.*?\r\n}m, "Host: #{host}\r\n"
           end
 
-          conn.server UUID.generate, host: host, port: (port || 80)
-          conn.relay_to_servers @b
-          @b.clear
+          conn.server session, host: host, port: (port || 80)
+          conn.relay_to_servers payload
+          payload.clear
         rescue => e
-          conn.unbind_backend
-          logger.error [e, SEPERATOR, 'REQUEST:', SEPERATOR, @b, SEPERATOR].join($/)
+          conn.unbind_backend(session)
+          logger.error [e, SEPERATOR, 'REQUEST:', SEPERATOR, payload, SEPERATOR].join($/)
         end
       end
 
@@ -74,12 +76,12 @@ class Proxy::Server
 
       conn.on_data do |data|
         begin
-          @b << data
-          @p << data
+          payload << data
+          parser  << data
           data
         rescue => e
-          conn.unbind_backend
-          logger.error [e, SEPERATOR, 'REQUEST:', SEPERATOR, @b, SEPERATOR].join($/)
+          conn.unbind_backend(session)
+          logger.error [e, SEPERATOR, 'REQUEST:', SEPERATOR, payload, SEPERATOR].join($/)
         end
       end
 
