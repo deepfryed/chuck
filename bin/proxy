@@ -1,5 +1,23 @@
 #!/usr/bin/env ruby
 
 $:.unshift File.dirname(__FILE__) + '/../lib'
-require 'proxy/server'
-Proxy::Server.new.run
+require 'options_parser'
+require 'proxy'
+
+options = OptionsParser.new(ARGV).options
+
+if options[:help]
+  puts <<-EOM
+
+    #{$0} [options]
+
+    --profile file
+    --host    host  # proxy host, default 0.0.0.0
+    --port    port  # proxy port, default 9889
+    --help
+
+  EOM
+  exit
+end
+
+Proxy::Server.new(options).start
