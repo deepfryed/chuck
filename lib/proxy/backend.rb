@@ -4,8 +4,8 @@ module Proxy
       @buffer = ''
       @plexer = plexer
       @ssl    = ssl
-      @parser = Http::Parser.new
-      @parser.on_message_complete = method(:on_message)
+      @parser = HTTP::Parser.new
+      @parser.on_message_complete(&method(:on_message))
     end
 
     def post_init
@@ -15,7 +15,7 @@ module Proxy
     def on_message
       @plexer.forward_to_client(@buffer)
       @buffer = ''
-      @parser.reset!
+      @parser.reset
     end
 
     def receive_data data

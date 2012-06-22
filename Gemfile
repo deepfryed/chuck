@@ -1,6 +1,6 @@
 source :rubygems
 
-gem 'http_parser.rb'
+gem 'http-parser-lite'
 gem 'thin'
 gem 'sinatra'
 gem 'foreman'

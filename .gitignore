@@ -2,3 +2,6 @@ gems/
 .bundle/
 bin/*
 !bin/proxy
+profiles/*
+!profiles/sample.rb
+tmp/

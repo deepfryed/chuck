@@ -1,6 +1,6 @@
 require 'uri'
 require 'logger'
-require 'http/parser'
+require 'http-parser'
 require 'proxy/profile'
 
 module Proxy
@@ -11,10 +11,10 @@ module Proxy
       @buffer  = ''
       @pending = 0
       @options = options
-      @parser  = Http::Parser.new
       @profile = Profile.new(options.fetch(:profile))
       @logger  = Logger.new(options.fetch(:logger, $stderr), 0)
-      @parser.on_message_complete = method(:on_message)
+      @parser  = HTTP::Parser.new
+      @parser.on_message_complete(&method(:on_message))
     end
 
     def ssl_config
@@ -30,6 +30,7 @@ module Proxy
     end
 
     def on_message
+      @parser.reset
       case http_method
         when nil
           http_error(400, 'Invalid HTTP method')
@@ -40,7 +41,6 @@ module Proxy
           forward_to_server(@buffer)
           @buffer = ''
       end
-      #@parser.reset!
     end
 
     def http_method
