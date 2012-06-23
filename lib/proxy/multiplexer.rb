@@ -1,4 +1,5 @@
 require 'uri'
+require 'cuuid/uuid'
 require 'logger'
 require 'http-parser'
 require 'proxy/profile'
@@ -13,8 +14,10 @@ module Proxy
       @options = options
       @profile = Profile.new(options.fetch(:profile))
       @logger  = Logger.new(options.fetch(:logger, $stderr), 0)
+
       @parser  = HTTP::Parser.new
       @parser.on_message_complete(&method(:on_message))
+      @parser.on_url(&method(:on_url))
     end
 
     def ssl_config
@@ -29,22 +32,19 @@ module Proxy
       http_error(400, 'Invalid Headers', e)
     end
 
-    def on_message
-      @parser.reset
-      case http_method
-        when nil
-          http_error(400, 'Invalid HTTP method')
-        when 'CONNECT'
-          http_connect
-        else
-          @pending += 1
-          forward_to_server(@buffer)
-          @buffer = ''
-      end
+    def on_url url
+      @uri = URI.parse(url)
     end
 
-    def http_method
-      @buffer.scan(%r{\A([[:upper:]]+)\s}).flatten.first
+    def on_message
+      if @parser.http_method == 'CONNECT'
+        http_connect
+      else
+        @pending += 1
+        forward_to_server
+        @buffer = ''
+      end
+      @parser.reset
     end
 
     def http_error code, message, e = nil
@@ -65,18 +65,13 @@ module Proxy
     end
 
     def http_connect
-      profile.process! @buffer
-      if match = @buffer.match(%r{\ACONNECT (?<host>[^:]+)(?::(?<port>\d+))?})
-        host, port = match[:host], (match[:port] || 443).to_i
-        @buffer    = ''
-        ssl        = port == 443
-
-        establish_backend_connection(host, port, Backend, self, ssl)
-        http_response(200, "Connected")
-        start_ssl if ssl
-      else
-        http_error(400, "Invalid CONNECT host/port")
-      end
+      host, port = @uri.to_s.split(/:/)
+      ssl        = port.to_i == 443
+      Proxy.log "#{session}, CONNECT, #{host}:#{port}"
+      establish_backend_connection(host, port.to_i)
+      http_response(200, "Connected")
+      start_ssl if ssl
+      @buffer = ''
     end
 
     def forward_to_client data
@@ -88,24 +83,32 @@ module Proxy
       http_error(504, 'Gateway timeout') if @pending > 0
     end
 
-    def forward_to_server data
-      profile.process! data
-      unless @backend
-        establish_backend_connection(*endpoint, Backend, self, false)
-      end
-      @backend.send_data(data)
+    def forward_to_server
+      Proxy.log "#{session}, #{@parser.http_method}, #{@uri}"
+      profile.process!(@buffer)
+      method, uri = parse_rewritten_header
+      Proxy.log "#{session}, #{method}, #{uri}"
+      establish_backend_connection(uri.host, uri.port) unless @backend
+      @backend.send_data(@buffer)
     rescue => e
       http_error(400, 'Bad proxy Header', e)
     end
 
-    def establish_backend_connection host, port, *args
+    def session
+      @session ||= UUID.generate
+    end
+
+    def establish_backend_connection host, port
       return if @backend
+
+      session
       if scope = profile.scopes[profile.scope_key(host, port)]
         @profile = scope
-        host = profile.host
-        port = profile.port
+        host     = profile.host
+        port     = profile.port
       end
-      @backend = EM.connect(host, port, *args)
+      Proxy.log "#{session}, CONNECT, #{host}:#{port}"
+      @backend = EM.connect(host, port, Backend, host: host, port: port, plexer: self, ssl: port == 443, session: session)
     end
 
     def unbind
@@ -113,10 +116,13 @@ module Proxy
       @backend = nil
     end
 
-    def endpoint
-      match = @buffer.match(%r{\A[[:upper:]]+\s(?<uri>http://[^\s]+)}) or raise 'Invalid URI'
-      uri   = URI.parse(match[:uri])
-      [uri.host, uri.port]
+    METHOD_URI_RE  = %r{\A(?<method>[[:upper:]]+)\s(?<uri>http://[^\s]+)}i
+    METHOD_PATH_RE = %r{\A(?<method>[[:upper:]]+)\s(?<uri>/[^\s]+)}i
+
+    def parse_rewritten_header
+      match = @buffer.match(METHOD_URI_RE) || @buffer.match(METHOD_PATH_RE)
+      match or raise 'Invalid URI'
+      [match[:method], URI.parse(match[:uri])]
     end
   end # Multiplexer
 end # Proxy
