@@ -86,6 +86,7 @@ module Proxy
       @buffer << data
       @parser << data
     rescue => e
+      Proxy.log_error(e, @session)
       unbind
     end
 

@@ -48,4 +48,4 @@ curl -v --proxy 127.0.0.1:8080 http://www.google.com/hello-world
 [https://github.com/igrigorik/em-proxy](https://github.com/igrigorik/em-proxy)
 
 ## License
-[Creative Commons Attribution - CC BY](http://creativecommons.org/licenses/by/3.0)
+MIT

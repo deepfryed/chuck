@@ -1,19 +1,17 @@
 require 'uri'
 require 'cuuid/uuid'
-require 'logger'
 require 'http-parser'
 require 'proxy/profile'
 
 module Proxy
   module Multiplexer
-    attr_reader :options, :profile, :logger
+    attr_reader :options, :profile
 
     def initialize options = {}
       @buffer  = ''
       @pending = 0
       @options = options
       @profile = Profile.new(options.fetch(:profile))
-      @logger  = Logger.new(options.fetch(:logger, $stderr), 0)
 
       @parser  = HTTP::Parser.new
       @parser.on_message_complete(&method(:on_message))
@@ -33,7 +31,18 @@ module Proxy
     end
 
     def on_url url
-      @uri = URI.parse(url)
+      case url
+        when %r{^[^/]+:\d+$}
+          @uri = uri_generic(*url.split(/:/))
+        else %r{^https?://}i
+          @uri = URI.parse(url)
+      end
+    end
+
+    def uri_generic host, port
+      URI.parse("").tap do |uri|
+        uri.host, uri.port = host, port.to_i
+      end
     end
 
     def on_message
@@ -50,10 +59,7 @@ module Proxy
     def http_error code, message, e = nil
       http_response(code, message)
       close_connection(true)
-      if e
-        logger.error(e)
-        logger.error(e.backtrace.take(20).join($/))
-      end
+      Proxy.log_error(e, session) if e
     end
 
     def http_response code, message
@@ -65,18 +71,19 @@ module Proxy
     end
 
     def http_connect
-      host, port = @uri.to_s.split(/:/)
-      ssl        = port.to_i == 443
-      Proxy.log "#{session}, CONNECT, #{host}:#{port}"
-      establish_backend_connection(host, port.to_i)
+      ssl = @uri.port == 443
+      Proxy.log "#{session}, CONNECT, #{@uri.host}:#{@uri.port}"
+      establish_backend_connection(@uri.host, @uri.port)
       http_response(200, "Connected")
       start_ssl if ssl
       @buffer = ''
     end
 
+    # TODO proxy keep-alive
     def forward_to_client data
       @pending -= 1
       send_data(data)
+      close_connection(true)
     end
 
     def finish
@@ -85,29 +92,37 @@ module Proxy
 
     def forward_to_server
       Proxy.log "#{session}, #{@parser.http_method}, #{@uri}"
+
       profile.process!(@buffer)
       method, uri = parse_rewritten_header
       Proxy.log "#{session}, #{method}, #{uri}"
+
       establish_backend_connection(uri.host, uri.port) unless @backend
       @backend.send_data(@buffer)
     rescue => e
       http_error(400, 'Bad proxy Header', e)
     end
 
-    def session
+    def start_session
       @session ||= UUID.generate
     end
+
+    alias_method :session, :start_session
 
     def establish_backend_connection host, port
       return if @backend
 
-      session
+      start_session
       if scope = profile.scopes[profile.scope_key(host, port)]
         @profile = scope
         host     = profile.host
         port     = profile.port
       end
-      Proxy.log "#{session}, CONNECT, #{host}:#{port}"
+
+      if port == 443
+        Proxy.log "#{session}, CONNECT, #{host}:#{port}"
+      end
+
       @backend = EM.connect(host, port, Backend, host: host, port: port, plexer: self, ssl: port == 443, session: session)
     end
 

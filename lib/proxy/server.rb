@@ -13,10 +13,17 @@ module Proxy
       @ssl      = Proxy.ssl_config
     end
 
+    def stop *args
+      puts $/, "Proxy::Server - shutting down"
+      EM.stop
+    end
+
     def start
+      %w(INT HUP TERM).each {|name| Signal.trap(name,  &method(:stop))}
+
       EM.run do
         EM.start_server(host, port, Multiplexer, ssl_config: @ssl, profile: @profile)
-        puts "listening on #{host}:#{port}"
+        puts "Proxy::Server - listening on #{host}:#{port}"
       end
     end
   end # Server

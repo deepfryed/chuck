@@ -1,4 +1,3 @@
-require 'logger'
 require 'proxy/server'
 
 module Proxy
@@ -11,14 +10,11 @@ module Proxy
   end
 
   def self.log message
-   (@logger ||= proxy_logger).info(message)
+    puts "#{Time.now.strftime('%F %T')}, #{message}"
   end
 
-  def self.proxy_logger device = $stderr
-    Logger.new(device, 0).tap do |logger|
-      logger.formatter = proc do |sev, datetime, cli, message|
-        "#{datetime.strftime('%F %T')}, #{message}#{$/}"
-      end
-    end
+  def self.log_error e, message
+    log(message)
+    $stderr.puts ["ERROR:", e.message, e.backtrace.take(20).join($/)].join($/)
   end
 end
