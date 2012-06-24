@@ -15,6 +15,7 @@ module Proxy
 
   def self.log_error e, message
     log(message)
-    $stderr.puts ["ERROR:", e.message, e.backtrace.take(20).join($/)].join($/)
+    $stderr.puts "ERROR: #{e.message}"
+    $stderr.puts e.backtrace.take(20).join($/)
   end
 end
