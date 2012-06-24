@@ -115,7 +115,11 @@ module Proxy
         port     = profile.port
       end
 
-      Proxy.log "#{session}, CONNECT, #{host}:#{port}" if port == 443
+      # connect redirect
+      if port == 443 && @uri.host != host
+        Proxy.log "#{session}, CONNECT, #{host}:#{port}"
+      end
+
       @backend = EM.connect(host, port, Backend, host: host, port: port, plexer: self, ssl: port == 443, session: session)
     end
 

@@ -1,9 +1,10 @@
-# Rewriting HTTP Proxy in Ruby
+# Debugging HTTP Proxy in Ruby
 
-A debugging proxy like Charles written in plain Ruby. You can more than simple rewriting since everything
-is done in ruby.
+A debugging proxy like Charles written in plain Ruby. You intercept requests, redirect or rewrite them using simple callbacks.
 
-* You can add, modify or delete headers.
+## Features
+
+* Add, modify or delete headers.
 * Do conditional rewrite based on request headers.
 * Combine multiple profiles, chain rules.
 * Generally, be more creative and productive.
@@ -41,7 +42,8 @@ end
 ./bin/foreman start
 
 # terminal/screen 2
-curl -v --proxy 127.0.0.1:8080 http://www.google.com/hello-world
+curl -v -k --proxy 127.0.0.1:8080 http://www.google.com/hello-world
+curl -v -k --proxy 127.0.0.1:8080 https://www.google.com/
 ```
 
 ## Notes
