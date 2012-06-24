@@ -7,6 +7,9 @@ module Proxy
   module Multiplexer
     attr_reader :options, :profile
 
+    METHOD_URI_RE  = %r{\A(?<method>[[:upper:]]+)\s(?<uri>http://[^\s]+)}i
+    METHOD_PATH_RE = %r{\A(?<method>[[:upper:]]+)\s(?<uri>/[^\s]+)}i
+
     def initialize options = {}
       @buffer  = ''
       @pending = 0
@@ -51,19 +54,9 @@ module Proxy
       else
         @pending += 1
         forward_to_server
-        @buffer = ''
       end
+      @buffer = ''
       @parser.reset
-    end
-
-    def http_error code, message, e = nil
-      http_response(code, message)
-      close_connection(true)
-      Proxy.log_error(e, session) if e
-    end
-
-    def http_response code, message
-      send_data("HTTP/1.1 #{code} #{message}\r\n\r\n")
     end
 
     def start_ssl
@@ -98,6 +91,9 @@ module Proxy
       Proxy.log "#{session}, #{method}, #{uri}"
 
       establish_backend_connection(uri.host, uri.port) unless @backend
+
+      # NOTE: some web servers do not like full URI in request. e.g. thin.
+      @buffer.sub!(%r{\A(?<method>\w+\s)(?:https?://[^/]+/?)}i) {$~[:method] + '/'}
       @backend.send_data(@buffer)
     rescue => e
       http_error(400, 'Bad proxy Header', e)
@@ -119,10 +115,7 @@ module Proxy
         port     = profile.port
       end
 
-      if port == 443
-        Proxy.log "#{session}, CONNECT, #{host}:#{port}"
-      end
-
+      Proxy.log "#{session}, CONNECT, #{host}:#{port}" if port == 443
       @backend = EM.connect(host, port, Backend, host: host, port: port, plexer: self, ssl: port == 443, session: session)
     end
 
@@ -131,13 +124,20 @@ module Proxy
       @backend = nil
     end
 
-    METHOD_URI_RE  = %r{\A(?<method>[[:upper:]]+)\s(?<uri>http://[^\s]+)}i
-    METHOD_PATH_RE = %r{\A(?<method>[[:upper:]]+)\s(?<uri>/[^\s]+)}i
-
     def parse_rewritten_header
       match = @buffer.match(METHOD_URI_RE) || @buffer.match(METHOD_PATH_RE)
       match or raise 'Invalid URI'
       [match[:method], URI.parse(match[:uri])]
+    end
+
+    def http_error code, message, e = nil
+      http_response(code, message)
+      close_connection(true)
+      Proxy.log_error(e, session) if e
+    end
+
+    def http_response code, message
+      send_data("HTTP/1.1 #{code} #{message}\r\n\r\n")
     end
   end # Multiplexer
 end # Proxy

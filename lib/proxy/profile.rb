@@ -15,11 +15,7 @@ module Proxy
       while index < rules.size && rewrite_count < MAX_REWRITES
         re, callback = rules[index - 1]
         if match = re.match(buffer)
-          log = ["rewriting request:", SEPERATOR, buffer.dup, SEPERATOR]
           buffer.sub!(re, callback.call(match))
-          log << buffer.dup << SEPERATOR
-          yield log.join($/) if block_given?
-
           # restart the matching for cascaded rewriting.
           index = 0
           rewrite_count += 1
