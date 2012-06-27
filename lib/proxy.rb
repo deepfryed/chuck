@@ -1,3 +1,4 @@
+require 'swift'
 require 'proxy/server'
 
 module Proxy
@@ -9,12 +10,7 @@ module Proxy
     {cert_chain_file: (root + 'certs/server.crt').to_s, private_key_file: (root + 'certs/server.key').to_s}
   end
 
-  def self.log message
-    puts "#{Time.now.strftime('%F %T')}, #{message}"
-  end
-
-  def self.log_error e, message
-    log(message)
+  def self.log_error e
     $stderr.puts "ERROR: #{e.message}"
     $stderr.puts e.backtrace.take(20).join($/)
   end

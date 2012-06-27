@@ -1,5 +1,8 @@
 require 'pathname'
 require 'eventmachine'
+require 'proxy/session'
+require 'proxy/request'
+require 'proxy/response'
 require 'proxy/multiplexer'
 require 'proxy/backend'
 

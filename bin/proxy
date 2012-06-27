@@ -3,6 +3,7 @@
 $:.unshift File.dirname(__FILE__) + '/../lib'
 require 'options_parser'
 require 'proxy'
+require 'swift/migrations'
 
 options = OptionsParser.new(ARGV).options
 
@@ -20,4 +21,9 @@ if options[:help]
   exit
 end
 
+Swift.setup(:default, Swift::DB::Sqlite3, db: ':memory:')
+Swift.migrate!
+
+$stdout.sync = true
+$stderr.sync = true
 Proxy::Server.new(options).start

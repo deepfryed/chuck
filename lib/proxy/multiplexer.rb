@@ -1,9 +1,24 @@
 require 'uri'
+require 'yajl'
 require 'cuuid/uuid'
 require 'http-parser'
 require 'proxy/profile'
 
 module Proxy
+  class Headers
+    def initialize
+      @content = []
+    end
+
+    def << value
+      @content << value
+    end
+
+    def to_s
+      Yajl.dump(Hash[*@content])
+    end
+  end
+
   module Multiplexer
     attr_reader :options, :profile
 
@@ -17,8 +32,45 @@ module Proxy
       @profile = Profile.new(options.fetch(:profile))
 
       @parser  = HTTP::Parser.new
-      @parser.on_message_complete(&method(:on_message))
-      @parser.on_url(&method(:on_url))
+      @session = Session.create
+      @request = Request.new(session_id: @session.id, body: '', headers: Headers.new)
+
+      %w(on_message_complete on_url on_header_field on_header_value on_body).each do |name|
+        @parser.send(name, &method(name.to_sym))
+      end
+    end
+
+    def on_url url
+      @request.uri = parse_url(url)
+    end
+
+    def on_header_field value
+      @request.headers << value
+    end
+
+    def on_header_value value
+      @request.headers << value
+    end
+
+    def on_body data
+      @request.body << data
+    end
+
+    def on_message_complete
+      @request.method = @parser.http_method
+      Request.create(@request)
+      intercept
+    end
+
+    def intercept
+      @parser.reset
+      if @request.connect?
+        http_connect
+      else
+        @pending += 1
+        forward_to_server
+      end
+      @buffer = ''
     end
 
     def ssl_config
@@ -30,15 +82,16 @@ module Proxy
       @buffer << data
       @parser << data
     rescue => e
+      Proxy.log_error(e)
       http_error(400, 'Invalid Headers', e)
     end
 
-    def on_url url
+    def parse_url url
       case url
         when %r{^[^/]+:\d+$}
-          @uri = uri_generic(*url.split(/:/))
+          uri_generic(*url.split(/:/))
         else %r{^https?://}i
-          @uri = URI.parse(url)
+          URI.parse(url)
       end
     end
 
@@ -48,31 +101,17 @@ module Proxy
       end
     end
 
-    def on_message
-      if @parser.http_method == 'CONNECT'
-        http_connect
-      else
-        @pending += 1
-        forward_to_server
-      end
-      @buffer = ''
-      @parser.reset
-    end
-
     def start_ssl
       start_tls(ssl_config)
     end
 
     def http_connect
-      ssl = @uri.port == 443
-      Proxy.log "#{session}, CONNECT, #{@uri.host}:#{@uri.port}"
-      establish_backend_connection(@uri.host, @uri.port)
+      establish_backend_connection(@request.host, @request.port)
       http_response(200, "Connected")
-      start_ssl if ssl
+      start_ssl if @request.ssl?
       @buffer = ''
     end
 
-    # TODO proxy keep-alive
     def forward_to_client data
       @pending -= 1
       send_data(data)
@@ -84,11 +123,12 @@ module Proxy
     end
 
     def forward_to_server
-      Proxy.log "#{session}, #{@parser.http_method}, #{@uri}"
-
       profile.process!(@buffer)
       method, uri = parse_rewritten_header
-      Proxy.log "#{session}, #{method}, #{uri}"
+
+      if @request.uri && @request.uri != uri
+        @request.update(uri: uri, rewritten: true)
+      end
 
       establish_backend_connection(uri.host, uri.port) unless @backend
 
@@ -96,31 +136,24 @@ module Proxy
       @buffer.sub!(%r{\A(?<method>\w+\s)(?:https?://[^/]+/?)}i) {$~[:method] + '/'}
       @backend.send_data(@buffer)
     rescue => e
+      Proxy.log_error(e)
       http_error(400, 'Bad proxy Header', e)
     end
-
-    def start_session
-      @session ||= UUID.generate
-    end
-
-    alias_method :session, :start_session
 
     def establish_backend_connection host, port
       return if @backend
 
-      start_session
       if scope = profile.scopes[profile.scope_key(host, port)]
         @profile = scope
         host     = profile.host
         port     = profile.port
       end
 
-      # connect redirect
       if port == 443 && @uri.host != host
-        Proxy.log "#{session}, CONNECT, #{host}:#{port}"
+        @request.update(uri: uri, rewritten: true)
       end
 
-      @backend = EM.connect(host, port, Backend, host: host, port: port, plexer: self, ssl: port == 443, session: session)
+      @backend = EM.connect(host, port, Backend, host: host, port: port, plexer: self, request: @request)
     end
 
     def unbind
@@ -137,7 +170,6 @@ module Proxy
     def http_error code, message, e = nil
       http_response(code, message)
       close_connection(true)
-      Proxy.log_error(e, session) if e
     end
 
     def http_response code, message
