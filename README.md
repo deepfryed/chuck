@@ -12,6 +12,11 @@ You intercept requests, redirect or rewrite them using simple callbacks.
 
 ## Setup
 
+Install dbic++ with sqlite3 first
+
+* https://github.com/deepfryed/dbicpp#debian
+* https://github.com/deepfryed/dbicpp#macosx
+
 ```
 bundle --path gems --binstubs
 ```
@@ -56,4 +61,4 @@ curl -v -k --proxy 127.0.0.1:8080 https://www.google.com/
 [https://github.com/igrigorik/em-proxy](https://github.com/igrigorik/em-proxy)
 
 ## License
-MIT
+GPLv3
