@@ -7,6 +7,8 @@ require 'chuck/profile'
 
 module Chuck
   class Headers
+    include Enumerable
+
     def initialize
       @content = []
     end
@@ -17,6 +19,10 @@ module Chuck
 
     def to_s
       Yajl.dump(Hash[*@content])
+    end
+
+    def each &block
+      @content.each_slice(2, &block)
     end
   end
 
@@ -122,7 +128,7 @@ module Chuck
     end
 
     def finish
-      @channel.push(request_html)
+      @channel.push(request_html) unless @request.connect?
       http_error(504, 'Gateway timeout') if @pending > 0
     end
 

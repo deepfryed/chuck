@@ -11,7 +11,7 @@ module Chuck
     end
 
     def run
-      EM::WebSocket.start(host: host, port: port, debug: true) do |ws|
+      EM::WebSocket.start(host: host, port: port, debug: false) do |ws|
         ws.onopen do
           id = channel.subscribe {|msg| ws.send(msg)}
           ws.onclose do

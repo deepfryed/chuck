@@ -38,6 +38,7 @@ module Chuck
       execute(%q{
         select r.*, re.created_at as finished_at, re.status
         from requests r left join responses re on (re.request_id = r.id)
+        where r.method != 'CONNECT'
         order by r.id desc
       })
     end

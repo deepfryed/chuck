@@ -1,3 +1,6 @@
+require 'zlib'
+require 'stringio'
+
 module Chuck
   module Backend
     attr_reader :host, :port
@@ -28,7 +31,21 @@ module Chuck
       @response.body << data
     end
 
+    def deflate
+      case @headers.map {|pair| pair.join(': ')}.join($/)
+        when %r{Content-Encoding: +deflate}i
+          @response.body = Zlib::Inflate.inflate(@response.body)
+        when %r{Content-Encoding: +gzip}i
+          zstream = Zlib::GzipReader.new(StringIO.new(@response.body))
+          @response.body = zstream.read
+          zstream.close
+      end
+    rescue => e
+      Chuck.log_error(e)
+    end
+
     def on_message_complete
+      deflate if @response.body.bytesize > 0
       @response.body.force_encoding(Encoding::UTF_8)
       @response.update(created_at: DateTime.now, status: @parser.http_status, headers: @headers)
       @plexer.forward_to_client(@buffer)

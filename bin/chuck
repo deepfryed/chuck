@@ -17,7 +17,6 @@ module Chuck
 
     def config op
       op.on('-d db',   '--db file',      String)  {|value| @options[:db]      = value}
-      op.on('-h host', '--host name',    String)  {|value| @options[:host]    = value}
       op.on('-p port', '--port name',    Integer) {|value| @options[:port]    = value}
       op.on('-f file', '--profile file', String)  {|value| @options[:profile] = value}
     end
