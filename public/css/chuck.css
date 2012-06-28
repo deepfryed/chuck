@@ -80,6 +80,10 @@ table.requests td.details a {
  font-size: 24px !important;
 }
 
+table.requests tr.em {
+  background: #ff7;
+}
+
 table.request td:first-child {
   font-weight: bold;
 }

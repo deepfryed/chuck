@@ -10,7 +10,7 @@
       %th
     %tbody
       - resource.each do |request|
-        != haml :'request/_request'
+        != haml :'request/_request', locals: {request: request}
 - else
   %img{src: '/img/sad-cat.jpg'}
   .empty

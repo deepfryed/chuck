@@ -141,14 +141,14 @@ module Chuck
       profile.process!(@buffer)
       method, uri = parse_rewritten_header
 
-      if @request.uri != uri
+      if @backend or @request.uri != uri
         @request.update(uri: absolute_uri(uri), rewritten: true, method: method)
       end
 
       establish_backend_connection(uri.host, uri.port) unless @backend
 
       # NOTE: some web servers do not like full URI in request. e.g. thin.
-      @buffer.sub!(%r{\A(?<method>\w+\s)(?:https?://[^/]+/?)}i) {$~[:method] + '/'}
+      # @buffer.sub!(%r{\A(?<method>\w+\s)(?:https?://[^/]+/?)}i) {$~[:method] + '/'}
       @backend.send_data(@buffer)
     rescue => e
       Chuck.log_error(e)
