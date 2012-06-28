@@ -1,6 +1,6 @@
 %tr{class: request.rewritten ? 're' : ''}
   %td
-    %a{href: url(:request, request.id)}= request.id
+    %a{href: url(:request, request.id), target: '_new'}= request.id
   %td= request.method
   %td.wrap
     %a{href: request.uri}= request.uri
@@ -8,4 +8,4 @@
   %td= request.status || 504
   %td= '%.4f' % request.lifetime
   %td.details
-    %a{href: url(:request, request.id)} &raquo;
+    %a{href: url(:request, request.id), target: '_new'} &raquo;

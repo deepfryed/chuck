@@ -10,13 +10,21 @@
     %link{rel: 'stylesheet', type: 'text/css', href: '/css/bootstrap.min.css'}
     %link{rel: 'stylesheet', type: 'text/css', href: '/css/chuck.css'}
 
-  %body
+  %body{id: page_id}
     #header.navbar.navbar-fixed-top
       .navbar-inner
         .container
           %h1
             %a.brand{href: '/'}
               Chuck
+          .nav-collapse
+            %ul.nav
+              %li.archive
+                %a{href: '/'}
+                  Archive
+              %li.stream
+                %a{href: '/stream'}
+                  Live Stream
 
     #wrapper
       .container

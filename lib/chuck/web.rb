@@ -18,6 +18,15 @@ module Chuck
         params = params.empty? ? '' : '?' + URI.escape(params.map{|*a| a.join('=')}.join('&')).to_s
         ['/', path.compact.map(&:to_s)].flatten.join('/').gsub(%r{/+}, '/') + params
       end
+
+      def page_id
+        path = request.path_info.split('/').compact.reject(&:empty?)
+        if path.empty?
+          'home'
+        else
+          path.join('_')
+        end
+      end
     end
 
     get '/' do

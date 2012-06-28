@@ -107,3 +107,14 @@ table.request tr.response td {
   font-family: Impact, 'Arial Black';
   font-size: 3em;
 }
+
+/* menu */
+body#home li.archive a {
+  font-weight: bold;
+  color: #fff;
+}
+
+body#stream li.stream a {
+  font-weight: bold;
+  color: #fff;
+}
