@@ -109,12 +109,12 @@ table.request tr.response td {
 }
 
 /* menu */
-body#home li.archive a {
+body#page_home li.archive a {
   font-weight: bold;
   color: #fff;
 }
 
-body#stream li.stream a {
+body#page_stream li.stream a {
   font-weight: bold;
   color: #fff;
 }

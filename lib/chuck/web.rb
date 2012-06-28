@@ -22,9 +22,9 @@ module Chuck
       def page_id
         path = request.path_info.split('/').compact.reject(&:empty?)
         if path.empty?
-          'home'
+          'page_home'
         else
-          path.join('_')
+          'page_%s' % path.join('_')
         end
       end
     end
