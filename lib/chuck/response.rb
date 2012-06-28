@@ -1,4 +1,4 @@
-module Proxy
+module Chuck
   class Response < Swift::Scheme
     store :responses
     attribute :id,         Swift::Type::Integer,  key: true, serial: true

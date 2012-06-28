@@ -1,4 +1,4 @@
-module Proxy
+module Chuck
   class Web < Sinatra::Base
     get '/session/:id' do |id|
       @session = Session.get(id: id) or raise Sinatra::NotFound

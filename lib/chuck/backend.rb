@@ -1,4 +1,4 @@
-module Proxy
+module Chuck
   module Backend
     attr_reader :host, :port
     def initialize options
@@ -43,7 +43,7 @@ module Proxy
       @buffer << data
       @parser << data
     rescue => e
-      Proxy.log_error(e)
+      Chuck.log_error(e)
       unbind
     end
 
@@ -52,4 +52,4 @@ module Proxy
       @plexer.close_connection(true)
     end
   end # Backend
-end # Proxy
+end # Chuck

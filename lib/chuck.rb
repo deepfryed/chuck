@@ -1,7 +1,7 @@
 require 'swift'
-require 'proxy/server'
+require 'chuck/server'
 
-module Proxy
+module Chuck
   def self.root
     @root ||= Pathname.new(__FILE__).dirname + '..'
   end

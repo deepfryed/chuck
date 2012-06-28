@@ -1,4 +1,4 @@
-module Proxy
+module Chuck
   class Request < Swift::Scheme
     store :requests
     attribute :id,         Swift::Type::Integer,  key: true, serial: true

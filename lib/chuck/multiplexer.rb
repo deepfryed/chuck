@@ -2,9 +2,9 @@ require 'uri'
 require 'yajl'
 require 'cuuid/uuid'
 require 'http-parser'
-require 'proxy/profile'
+require 'chuck/profile'
 
-module Proxy
+module Chuck
   class Headers
     def initialize
       @content = []
@@ -82,7 +82,7 @@ module Proxy
       @buffer << data
       @parser << data
     rescue => e
-      Proxy.log_error(e)
+      Chuck.log_error(e)
       http_error(400, 'Invalid Headers', e)
     end
 
@@ -136,8 +136,8 @@ module Proxy
       @buffer.sub!(%r{\A(?<method>\w+\s)(?:https?://[^/]+/?)}i) {$~[:method] + '/'}
       @backend.send_data(@buffer)
     rescue => e
-      Proxy.log_error(e)
-      http_error(400, 'Bad proxy Header', e)
+      Chuck.log_error(e)
+      http_error(400, 'Bad chuck Header', e)
     end
 
     def establish_backend_connection host, port
@@ -176,4 +176,4 @@ module Proxy
       send_data("HTTP/1.1 #{code} #{message}\r\n\r\n")
     end
   end # Multiplexer
-end # Proxy
+end # Chuck

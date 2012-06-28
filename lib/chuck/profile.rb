@@ -1,4 +1,4 @@
-module Proxy
+module Chuck
   class Profile
     MAX_REWRITES = 5
     SEPERATOR    = '~' * 80
@@ -73,4 +73,4 @@ module Proxy
         @host, @port = host, port
       end
   end # Profile
-end # Proxy
+end # Chuck

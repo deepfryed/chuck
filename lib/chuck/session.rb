@@ -1,4 +1,4 @@
-module Proxy
+module Chuck
   class Session < Swift::Scheme
     store :sessions
     attribute :id,         Swift::Type::String,   default: proc { UUID.generate }, key: true

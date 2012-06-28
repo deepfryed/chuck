@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+
+$:.unshift File.dirname(__FILE__) + '/../lib'
+
+require 'chuck'
+require 'optparse'
+require 'swift/migrations'
+
+module Chuck
+  class Cli
+    def initialize
+      @options = {}
+    end
+
+    def config op
+      op.on('-h host', '--host name',    String)  {|value| @options[:host]    = value}
+      op.on('-p port', '--port name',    Integer) {|value| @options[:port]    = value}
+      op.on('-f file', '--profile file', String)  {|value| @options[:profile] = value}
+    end
+
+    def parse!
+      @parsed = OptionParser.new(&method(:config)).parse!
+    end  
+      
+    def options
+      @parsed ? @options : parse! && @options
+    end
+  end # Cli
+end # Chuck
+
+Swift.setup(:default, Swift::DB::Sqlite3, db: ':memory:')
+Swift.migrate!
+
+$stdout.sync = true
+$stderr.sync = true
+
+Chuck::Server.new(Chuck::Cli.new.options).start

@@ -1,7 +1,7 @@
-# Debugging HTTP Proxy in Ruby
+# Chuck - A Debugging HTTP Proxy in Ruby
 
-A debugging proxy like CharlesProxy written in plain Ruby.
-You intercept requests, redirect or rewrite them using simple callbacks.
+A debugging proxy like CharlesProxy written in plain Ruby. You can intercept requests,
+redirect or rewrite them using simple callbacks.
 
 ## Features
 
