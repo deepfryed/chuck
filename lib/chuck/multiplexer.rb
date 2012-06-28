@@ -157,8 +157,10 @@ module Chuck
 
     def absolute_uri uri
       case uri
-        when URI::Generic then URI.parse("https://#{@request.uri.host}#{uri}")
-        else uri
+        when URI::HTTP, URI::HTTPS
+          uri
+        else
+          URI.parse("https://#{@request.uri.host}#{uri}")
       end
     end
 
