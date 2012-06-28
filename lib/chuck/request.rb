@@ -31,13 +31,13 @@ module Chuck
     end
 
     def status
-      tuple[:status] || response.status
+      tuple[:status] || (response && response.status)
     end
 
     def self.recent
       execute(%q{
         select r.*, re.created_at as finished_at, re.status
-        from requests r join responses re on (re.request_id = r.id)
+        from requests r left join responses re on (re.request_id = r.id)
         order by r.id desc
       })
     end

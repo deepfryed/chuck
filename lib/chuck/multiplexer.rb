@@ -23,7 +23,7 @@ module Chuck
     attr_reader :options, :profile
 
     METHOD_URI_RE  = %r{\A(?<method>[[:upper:]]+)\s(?<uri>http://[^\s]+)}i
-    METHOD_PATH_RE = %r{\A(?<method>[[:upper:]]+)\s(?<uri>/[^\s]+)}i
+    METHOD_PATH_RE = %r{\A(?<method>[[:upper:]]+)\s(?<uri>/[^\s]*)}i
 
     def initialize options = {}
       @buffer  = ''
@@ -41,7 +41,7 @@ module Chuck
     end
 
     def on_url url
-      @request.uri = parse_url(url)
+      @request.uri = parse_url(url) unless @request.uri
     end
 
     def on_header_field value
@@ -59,7 +59,7 @@ module Chuck
     def on_message_complete
       @request.body   = @request.body.force_encoding(Encoding::UTF_8)
       @request.method = @parser.http_method
-      Request.create(@request)
+      Request.create(@request) unless @request.id
       intercept
     end
 
@@ -127,8 +127,8 @@ module Chuck
       profile.process!(@buffer)
       method, uri = parse_rewritten_header
 
-      if @request.uri && @request.uri != uri
-        @request.update(uri: uri, rewritten: true)
+      if @request.uri != uri
+        @request.update(uri: absolute_uri(uri), rewritten: true, method: method)
       end
 
       establish_backend_connection(uri.host, uri.port) unless @backend
@@ -139,6 +139,13 @@ module Chuck
     rescue => e
       Chuck.log_error(e)
       http_error(400, 'Bad chuck Header', e)
+    end
+
+    def absolute_uri uri
+      case uri
+        when URI::Generic then URI.parse("https://#{@request.uri.host}#{uri}")
+        else uri
+      end
     end
 
     def establish_backend_connection host, port
