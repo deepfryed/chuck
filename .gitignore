@@ -5,3 +5,5 @@ bin/*
 profiles/*
 !profiles/sample.rb
 tmp/
+*.sqlite3
+*.sqlite
