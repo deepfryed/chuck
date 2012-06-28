@@ -50,6 +50,7 @@ end
 # terminal/screen 2
 curl -v -k --proxy 127.0.0.1:8080 http://www.google.com/hello-world
 curl -v -k --proxy 127.0.0.1:8080 https://www.google.com/
+```
 
 ## Logs
 
