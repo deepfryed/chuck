@@ -29,6 +29,7 @@ module Chuck
     end
 
     def on_message_complete
+      @response.body.force_encoding(Encoding::UTF_8)
       @response.update(created_at: DateTime.now, status: @parser.http_status, headers: @headers)
       @plexer.forward_to_client(@buffer)
       @parser.reset

@@ -57,6 +57,10 @@ curl -v -k --proxy 127.0.0.1:8080 https://www.google.com/
 * The proxy always intercepts SSL requests even if there is no remap of request, this is not ideal.
 * There is no proxy keep-alive support yet.
 
+# TODO
+
+* Display request, response stuff in realtime using eventsource & sinatra
+
 # See Also
 [https://github.com/igrigorik/em-proxy](https://github.com/igrigorik/em-proxy)
 

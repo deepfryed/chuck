@@ -57,6 +57,7 @@ module Chuck
     end
 
     def on_message_complete
+      @request.body   = @request.body.force_encoding(Encoding::UTF_8)
       @request.method = @parser.http_method
       Request.create(@request)
       intercept
@@ -106,7 +107,7 @@ module Chuck
     end
 
     def http_connect
-      establish_backend_connection(@request.host, @request.port)
+      establish_backend_connection(@request.uri.host, @request.uri.port)
       http_response(200, "Connected")
       start_ssl if @request.ssl?
       @buffer = ''
@@ -149,7 +150,7 @@ module Chuck
         port     = profile.port
       end
 
-      if port == 443 && @uri.host != host
+      if port == 443 && @request.uri.host != host
         @request.update(uri: uri, rewritten: true)
       end
 
