@@ -96,3 +96,10 @@ table.request tr.response {
 table.request tr.response td {
   border: none;
 }
+
+/* lolz */
+.empty {
+  margin-top: 20px;
+  font-family: Impact, 'Arial Black';
+  font-size: 3em;
+}

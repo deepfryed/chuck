@@ -31,6 +31,8 @@ module Chuck
         Thin::Server.start(host, port + 1, Chuck::Web)
         puts "Chuck::Server - listening on #{host}:#{port}"
         puts "Chuck::Web    - listening on #{host}:#{port + 1}"
+
+        puts $/, "You should be able to view the logs at http://localhost:#{port + 1}/", $/
         Chuck.proxy_uri = "#{host}:#{port}"
       end
     end
