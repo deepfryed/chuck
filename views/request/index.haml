@@ -10,17 +10,7 @@
       %th
     %tbody
       - resource.each do |request|
-        %tr
-          %td
-            %a{href: url(:request, request.id)}= request.id
-          %td= request.method
-          %td.wrap
-            %a{href: request.uri}= request.uri
-          %td= request.created_at.strftime('%F %T')
-          %td= request.status || 504
-          %td= '%.4f' % request.lifetime
-          %td.details
-            %a{href: url(:request, request.id)} &raquo;
+        != haml :'request/_request'
 - else
   %img{src: '/img/sad-cat.jpg'}
   .empty

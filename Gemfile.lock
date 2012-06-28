@@ -1,8 +1,12 @@
 GEM
   remote: http://rubygems.org/
   specs:
+    addressable (2.2.8)
     cuuid (0.3.1)
     daemons (1.1.8)
+    em-websocket (0.3.6)
+      addressable (>= 2.1.1)
+      eventmachine (>= 0.12.9)
     eventmachine (0.12.10)
     foreman (0.47.0)
       thor (>= 0.13.6)
@@ -30,6 +34,7 @@ PLATFORMS
 
 DEPENDENCIES
   cuuid
+  em-websocket
   eventmachine
   foreman
   haml

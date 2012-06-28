@@ -1,5 +1,6 @@
 require 'uri'
 require 'yajl'
+require 'haml'
 require 'cuuid/uuid'
 require 'http-parser'
 require 'chuck/profile'
@@ -29,6 +30,7 @@ module Chuck
       @buffer  = ''
       @pending = 0
       @options = options
+      @channel = options.fetch(:channel)
       @profile = Profile.new(options.fetch(:profile))
 
       @parser  = HTTP::Parser.new
@@ -120,7 +122,19 @@ module Chuck
     end
 
     def finish
+      @channel.push(request_html)
       http_error(504, 'Gateway timeout') if @pending > 0
+    end
+
+    def request_html
+      haml = Haml::Engine.new(File.read(Chuck.root + 'views/request/_request.haml'))
+      haml.render(self, request: @request)
+    end
+
+    def url *path
+      params = path[-1].respond_to?(:to_hash) ? path.delete_at(-1).to_hash : {}
+      params = params.empty? ? '' : '?' + URI.escape(params.map{|*a| a.join('=')}.join('&')).to_s
+      ['/', path.compact.map(&:to_s)].flatten.join('/').gsub(%r{/+}, '/') + params
     end
 
     def forward_to_server

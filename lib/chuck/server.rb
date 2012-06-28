@@ -7,6 +7,7 @@ require 'chuck/response'
 require 'chuck/multiplexer'
 require 'chuck/backend'
 require 'chuck/web'
+require 'chuck/stream'
 
 module Chuck
   class Server
@@ -27,7 +28,9 @@ module Chuck
       %w(INT HUP TERM).each {|name| Signal.trap(name,  &method(:stop))}
 
       EM.run do
-        EM.start_server(host, port, Multiplexer, ssl_config: @ssl, profile: @profile)
+        stream = Stream.new(host, 8998)
+        stream.run
+        EM.start_server(host, port, Multiplexer, ssl_config: @ssl, profile: @profile, channel: stream.channel)
         Thin::Server.start(host, port + 1, Chuck::Web)
         puts "Chuck::Server - listening on #{host}:#{port}"
         puts "Chuck::Web    - listening on #{host}:#{port + 1}"

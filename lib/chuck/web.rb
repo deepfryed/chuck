@@ -25,6 +25,10 @@ module Chuck
       haml :'request/index'
     end
 
+    get '/stream' do
+      haml :stream
+    end
+
     get '/session/:id' do |id|
       @resource = Session.get(id: id) or raise Sinatra::NotFound
       haml :'session/show'
