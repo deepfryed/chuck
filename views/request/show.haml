@@ -1,0 +1,20 @@
+%h2
+  Request
+
+%table.table.request
+  %tbody
+    %tr
+      %td URL
+      %td= resource.uri
+    %tr
+      %td Method
+      %td= resource.method
+    %tr
+      %td Headers
+      %td
+        %pre= resource.raw_headers
+    %tr.response
+      %td{colspan: 2}
+        %h2 Response
+
+    != haml :'response/_response', locals: {resource: resource.response}

@@ -1,0 +1,98 @@
+/* fixed footer */
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  overflow-y: auto !important;
+}
+
+html, body, #wrapper {
+  height: 100%;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 400;
+  font-family: "Sans Serif", "Arial";
+}
+
+body > #wrapper {
+  height: auto;
+  min-height: 100%;
+}
+
+#wrapper > .container {
+  padding: 100px 0 80px 0;
+}
+
+.navbar a.brand {
+  padding: 0 20px;
+}
+
+#header .navbar-inner {
+  padding: 10px 0;
+  background: #222;
+  font-family: "Helvetica Neue", "Helvetica", "Arial", "Sans-Serif";
+}
+
+#header .navbar-inner h1 a {
+  color: #fff;
+  font-size: 32px;
+  font-weight: bold;
+}
+
+#footer {
+  color: #fff;
+  clear:both;
+  padding: 0;
+  height: 50px;
+  position: relative;
+  margin: -51px auto 0 auto;
+  background: #222;
+}
+
+#footer .container > ul {
+  margin-top: 16px;
+  margin-left: 0;
+}
+
+#footer .container > ul li {
+  margin-right: 10px;
+}
+
+#footer li {
+  float: left;
+  list-style-type: none;
+}
+
+/* tables */
+
+table.requests td {
+  white-space: nowrap;
+}
+
+table.requests td.wrap {
+  white-space: normal;
+}
+
+table.requests td.details a {
+ font-size: 24px !important;
+}
+
+table.request td:first-child {
+  font-weight: bold;
+}
+
+table.request pre {
+  border: none;
+  background-color: transparent;
+}
+
+table.request tr.response {
+  border: none;
+}
+
+table.request tr.response td {
+  border: none;
+}

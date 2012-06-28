@@ -2,17 +2,21 @@
 
 $:.unshift File.dirname(__FILE__) + '/../lib'
 
+require 'bundler/setup'
+
+require 'swift'
 require 'chuck'
-require 'optparse'
+require 'chuck/server'
 require 'swift/migrations'
 
 module Chuck
   class Cli
     def initialize
-      @options = {}
+      @options = {db: ':memory:'}
     end
 
     def config op
+      op.on('-d db',   '--db file',      String)  {|value| @options[:db]      = value}
       op.on('-h host', '--host name',    String)  {|value| @options[:host]    = value}
       op.on('-p port', '--port name',    Integer) {|value| @options[:port]    = value}
       op.on('-f file', '--profile file', String)  {|value| @options[:profile] = value}
@@ -20,18 +24,34 @@ module Chuck
 
     def parse!
       @parsed = OptionParser.new(&method(:config)).parse!
-    end  
-      
+    end
+
     def options
       @parsed ? @options : parse! && @options
+    end
+
+    def run
+      db = options.delete(:db)
+      Swift.setup(:default, Swift::DB::Sqlite3, db: db)
+
+      begin
+        Swift.db.execute("select * from sessions")
+      rescue
+        Swift.migrate!
+      end
+
+      $stdout.sync = true
+      $stderr.sync = true
+
+      if db == ':memory:'
+        $stdout.puts '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        $stdout.puts 'chuck is storing logs in memory'
+        $stdout.puts '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+      end
+
+      Chuck::Server.new(options).start
     end
   end # Cli
 end # Chuck
 
-Swift.setup(:default, Swift::DB::Sqlite3, db: ':memory:')
-Swift.migrate!
-
-$stdout.sync = true
-$stderr.sync = true
-
-Chuck::Server.new(Chuck::Cli.new.options).start
+Chuck::Cli.new.run

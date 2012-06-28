@@ -17,5 +17,29 @@ module Chuck
     def ssl?
       (URI === uri ? uri.port : URI.parse(uri).port) == 443
     end
+
+    def response
+      Response.execute("select * from responses where request_id = ? limit 1", id).first
+    end
+
+    def raw_headers
+      Yajl.load(headers).map {|pair| pair.join(': ')}.join($/)
+    end
+
+    def lifetime
+      tuple[:finished_at] ? (tuple[:finished_at] - created_at) : 0
+    end
+
+    def status
+      tuple[:status] || response.status
+    end
+
+    def self.recent
+      execute(%q{
+        select r.*, re.created_at as finished_at, re.status
+        from requests r join responses re on (re.request_id = r.id)
+        order by r.id desc
+      })
+    end
   end
 end

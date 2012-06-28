@@ -151,7 +151,7 @@ module Chuck
       end
 
       if port == 443 && @request.uri.host != host
-        @request.update(uri: uri, rewritten: true)
+        @request.update(uri: uri_generic(host, port), rewritten: true)
       end
 
       @backend = EM.connect(host, port, Backend, host: host, port: port, plexer: self, request: @request)

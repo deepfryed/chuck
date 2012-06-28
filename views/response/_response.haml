@@ -1,0 +1,15 @@
+%tr
+  %td Status
+  %td= resource.status
+%tr
+  %td Headers
+  %td
+    %pre= resource.raw_headers
+%tr
+  %td Content
+  %td
+    - if resource.text?
+      %pre
+        = resource.body
+    - elsif resource.image?
+      %img{src: url(:response, resource.id, :body)}

@@ -37,7 +37,11 @@ module Chuck
     end
 
     def post_init
-      start_tls if @ssl
+      start_tls if ssl?
+    end
+
+    def ssl?
+      @request.ssl? or port == 443
     end
 
     def receive_data data

@@ -1,3 +1,4 @@
+require 'thin'
 require 'pathname'
 require 'eventmachine'
 require 'chuck/session'
@@ -5,6 +6,7 @@ require 'chuck/request'
 require 'chuck/response'
 require 'chuck/multiplexer'
 require 'chuck/backend'
+require 'chuck/web'
 
 module Chuck
   class Server
@@ -26,7 +28,10 @@ module Chuck
 
       EM.run do
         EM.start_server(host, port, Multiplexer, ssl_config: @ssl, profile: @profile)
+        Thin::Server.start(host, port + 1, Chuck::Web)
         puts "Chuck::Server - listening on #{host}:#{port}"
+        puts "Chuck::Web    - listening on #{host}:#{port + 1}"
+        Chuck.proxy_uri = "#{host}:#{port}"
       end
     end
   end # Server

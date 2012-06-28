@@ -1,0 +1,34 @@
+!!! 5
+%html
+  %head
+    %title Chuck - A HTTP Debugging Proxy
+
+    %meta{charset: 'utf-8'}
+    %meta{content: 'text/html; charset=utf-8', 'http-equiv' => 'content-type'}
+    %meta{'http-equiv' => 'X-UA-Compatible', content: 'IE=edge,chrome=1'}
+    %meta{name: 'viewport', content: 'width=device-width,initial-scale=1,maximum-scale=1'}
+    %link{rel: 'stylesheet', type: 'text/css', href: '/css/bootstrap.min.css'}
+    %link{rel: 'stylesheet', type: 'text/css', href: '/css/chuck.css'}
+
+  %body
+    #header.navbar.navbar-fixed-top
+      .navbar-inner
+        .container
+          %h1
+            %a.brand{href: '/'}
+              Chuck HTTP Proxy
+
+    #wrapper
+      .container
+        .content
+          .clearfix
+
+          != yield
+
+    #footer
+      .container
+        %ul
+          %li
+            &copy; Bharanee Rathna
+
+    %script{type: 'text/javascript', src: '/js/chuck.js'}

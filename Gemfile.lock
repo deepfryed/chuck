@@ -11,6 +11,7 @@ GEM
     rack (1.4.1)
     rack-protection (1.2.0)
       rack
+    rdiscount (1.6.8)
     sinatra (1.3.2)
       rack (~> 1.3, >= 1.3.6)
       rack-protection (~> 1.2)
@@ -33,6 +34,7 @@ DEPENDENCIES
   foreman
   haml
   http-parser-lite
+  rdiscount
   sinatra
   swift
   thin

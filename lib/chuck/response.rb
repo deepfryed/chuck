@@ -9,12 +9,24 @@ module Chuck
     attribute :body,       Swift::Type::String
     attribute :created_at, Swift::Type::DateTime
 
-    def self.find_by attrs = {}
-      execute("select * from #{self} where #{filter_by(attrs)} limit 1", *attrs.values).first
+    def headers_hash
+      @headers_hash ||= Yajl.load(headers.to_s) || {}
     end
 
-    def self.filter_by attrs
-      attrs.keys.map {|name| '%s = ?' % name}.join(' and ')
+    def raw_headers
+      headers_hash.map {|pair| pair.join(': ')}.join($/)
+    end
+
+    def content_type
+      headers_hash.select {|k, v| k.downcase == 'content-type'}.values.first
+    end
+
+    def image?
+      !!%r{^image/}.match(content_type)
+    end
+
+    def text?
+      !!%r{^(?:text/|application/.*(?:json|xml))}.match(content_type)
     end
   end
 end

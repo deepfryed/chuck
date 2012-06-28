@@ -1,0 +1,25 @@
+- if resource.rows > 0
+  %table.table.requests
+    %thead
+      %th ID
+      %th Method
+      %th URI
+      %th Started
+      %th Status
+      %th Lasted
+      %th
+    %tbody
+      - resource.each do |request|
+        %tr
+          %td
+            %a{href: url(:request, request.id)}= request.id
+          %td= request.method
+          %td.wrap
+            %a{href: request.uri}= request.uri
+          %td= request.created_at.strftime('%F %T')
+          %td= request.status || 504
+          %td= '%.4f' % request.lifetime
+          %td.details
+            %a{href: url(:request, request.id)} &raquo;
+- else
+  %h1 Nothing to display yet, chuck away!
