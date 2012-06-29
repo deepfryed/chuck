@@ -4,6 +4,7 @@ require 'haml'
 require 'cuuid/uuid'
 require 'http-parser'
 require 'chuck/profile'
+require 'chuck/ssl'
 
 module Chuck
   class Headers
@@ -38,8 +39,8 @@ module Chuck
       @options = options
       @channel = options.fetch(:channel)
       @profile = Profile.new(options.fetch(:profile))
+      @parser  = HTTP::Parser.new(HTTP::Parser::TYPE_REQUEST)
 
-      @parser  = HTTP::Parser.new
       @session = Session.create
       @request = Request.new(session_id: @session.id, body: '', headers: Headers.new)
 
@@ -82,10 +83,6 @@ module Chuck
       @buffer = ''
     end
 
-    def ssl_config
-      options[:ssl_config].merge(verify_peer: false)
-    end
-
     # data from client
     def receive_data data
       @buffer << data
@@ -110,14 +107,16 @@ module Chuck
       end
     end
 
-    def start_ssl
-      start_tls(ssl_config)
-    end
-
     def http_connect
+      host = @request.uri.host
       establish_backend_connection(@request.uri.host, @request.uri.port)
       http_response(200, "Connected")
-      start_ssl if @request.ssl?
+
+      if @request.ssl?
+        @ssl = SSL.certificate(host)
+        start_tls(cert_chain_file: @ssl.certificate_file, private_key_file: @ssl.private_key_file, verify_peer: false)
+      end
+
       @buffer = ''
     end
 
@@ -152,13 +151,10 @@ module Chuck
       end
 
       establish_backend_connection(uri.host, uri.port) unless @backend
-
-      # NOTE: some web servers do not like full URI in request. e.g. thin.
-      # @buffer.sub!(%r{\A(?<method>\w+\s)(?:https?://[^/]+/?)}i) {$~[:method] + '/'}
       @backend.send_data(@buffer)
     rescue => e
       Chuck.log_error(e)
-      http_error(400, 'Bad chuck Header', e)
+      http_error(400, 'Bad Header', e)
     end
 
     def absolute_uri uri

@@ -12,7 +12,8 @@ module Chuck
       @request  = options.fetch(:request)
       @headers  = Headers.new
       @response = Response.create(request_id: @request.id, session_id: @request.session_id, body: '')
-      @parser   = HTTP::Parser.new
+      @parser   = HTTP::Parser.new(HTTP::Parser::TYPE_RESPONSE)
+      @segments = []
 
       %w(on_message_complete on_header_field on_header_value on_body).each do |name|
         @parser.send(name, &method(name.to_sym))
@@ -51,6 +52,10 @@ module Chuck
       @plexer.forward_to_client(@buffer)
       @parser.reset
       @buffer = ''
+    rescue => e
+      Chuck.log_error(e)
+      IO.write("response.bad", Marshal.dump(@segments))
+      unbind
     end
 
     def post_init
@@ -62,6 +67,7 @@ module Chuck
     end
 
     def receive_data data
+      @segments << data
       @buffer << data
       @parser << data
     rescue => e

@@ -1,3 +1,5 @@
+require 'pathname'
+
 module Chuck
   class << self
     attr_accessor :proxy_uri

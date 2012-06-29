@@ -34,11 +34,19 @@ module Chuck
       tuple[:status] || (response && response.status)
     end
 
+    def curl
+      "curl -X #{method} #{curl_headers} #{uri}"
+    end
+
+    def curl_headers
+      (String === headers ? Yajl.load(headers) : headers).map {|pair| %Q{-H "#{pair.join(': ')}"}}.join(' ')
+    end
+
     def self.recent
       execute(%q{
         select r.*, re.created_at as finished_at, re.status
         from requests r left join responses re on (re.request_id = r.id)
-        where r.method != 'CONNECT'
+        where r.method != 'CONNECT1'
         order by r.id desc
       })
     end
