@@ -1,13 +1,14 @@
 - if resource.rows > 0
   %table.table.requests
     %thead
-      %th ID
-      %th Method
-      %th URI
-      %th Started
-      %th Status
-      %th Lasted
-      %th
+      %tr
+        %th ID
+        %th Method
+        %th URI
+        %th Started
+        %th Status
+        %th Lasted
+        %th
     %tbody
       - resource.each do |request|
         != haml :'request/_request', locals: {request: request}

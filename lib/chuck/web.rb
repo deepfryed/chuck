@@ -1,6 +1,7 @@
 require 'haml'
 require 'yajl/json_gem'
 require 'sinatra/base'
+require 'sinatra/content'
 require 'chuck/session'
 require 'chuck/request'
 require 'chuck/response'
@@ -11,23 +12,6 @@ module Chuck
     set :haml, escape_html: true, format: :html5
 
     attr_reader :resource
-
-    helpers do
-      def url *path
-        params = path[-1].respond_to?(:to_hash) ? path.delete_at(-1).to_hash : {}
-        params = params.empty? ? '' : '?' + URI.escape(params.map{|*a| a.join('=')}.join('&')).to_s
-        ['/', path.compact.map(&:to_s)].flatten.join('/').gsub(%r{/+}, '/') + params
-      end
-
-      def page_id
-        path = request.path_info.split('/').compact.reject(&:empty?)
-        if path.empty?
-          'page_home'
-        else
-          'page_%s' % path.join('_')
-        end
-      end
-    end
 
     get '/' do
       @resource = Request.recent

@@ -1,16 +1,17 @@
 %table.table.requests
   %thead
-    %th ID
-    %th Method
-    %th URI
-    %th Started
-    %th Status
-    %th Lasted
-    %th
+    %tr
+      %th ID
+      %th Method
+      %th URI
+      %th Started
+      %th Status
+      %th Lasted
+      %th
   %tbody#stream
     %tr.message.em
       %td{colspan: 6}
         %center Nothing's happened yet.
 
-%script{type: 'text/javascript', src: '/js/jquery.min.js'}
-%script{type: 'text/javascript', src: '/js/chuck.js'}
+- content :after do
+  %script{type: 'text/javascript', src: '/js/stream.js'}
