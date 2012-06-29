@@ -76,6 +76,11 @@ table.requests td.wrap {
   white-space: normal;
 }
 
+table.requests td:nth-child(3) {
+  max-width: 400px;
+  overflow: hidden;
+}
+
 table.requests td.details a {
  font-size: 24px !important;
 }
@@ -117,4 +122,22 @@ body#page_home li.archive a {
 body#page_stream li.stream a {
   font-weight: bold;
   color: #fff;
+}
+
+/* pagination */
+
+.jqt-pagination input {
+  margin: 0 !important;
+  line-height: auto !important;
+  height: auto;
+  width: auto;
+  padding: 2px 2px 0 2px !important;
+  box-shadow: none;
+  border-color: transparent;
+  border: 0;
+}
+
+.jqt-control .query input {
+  width: auto !important;
+  line-height: auto !important;
 }

@@ -1,3 +1,3 @@
 $(document).ready(function() {
-  $('table.requests').tables();
+  $('body#page_home table.requests').tables();
 });
