@@ -2,12 +2,12 @@
   %table.table.requests
     %thead
       %tr
-        %th ID
+        %th{data: {type: 'numeric'}} ID
         %th Method
         %th URI
         %th Started
         %th Status
-        %th Lasted
+        %th{data: {type: 'numeric'}} Lasted
         %th
     %tbody
       - resource.each do |request|
