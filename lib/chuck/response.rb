@@ -12,7 +12,7 @@ module Chuck
     def self.load tuple
       allocate.tap do |instance|
         instance.tuple   = tuple
-        instance.headers = Headers.new Yajl.load(tuple[:headers])
+        instance.headers = Headers.new Yajl.load(tuple[:headers] || '[]')
       end
     end
 

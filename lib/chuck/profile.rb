@@ -43,11 +43,11 @@ module Chuck
         end
       end
 
-      def on_request host, &callback
+      def on_request host = nil, &callback
         callbacks[:request][host] = callback
       end
 
-      def on_response host, &callback
+      def on_response host = nil, &callback
         callbacks[:response][host] = callback
       end
 

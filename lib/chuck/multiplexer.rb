@@ -102,8 +102,13 @@ module Chuck
     end
 
     def forward_to_client data
-      if callback = profile.callbacks[:response][@request.uri.host]
-        callback.call(@request.response, data)
+      if callback = profile.callbacks[:response][@request.uri.host] || profile.callbacks[:response][nil]
+        begin
+          callback.call(@request.response, data)
+        rescue => e
+          Chuck.log_error(e)
+          http_error(504, 'Gateway timeout')
+        end
       end
 
       @pending -= 1
@@ -135,12 +140,16 @@ module Chuck
         @request.update(uri: absolute_uri(uri), rewritten: true, method: method)
       end
 
-      establish_backend_connection(uri.host, uri.port) unless @backend
-
-      if callback = profile.callbacks[:request][@request.uri.host]
-        callback.call(@request, @buffer)
+      if callback = profile.callbacks[:request][@request.uri.host] || profile.callbacks[:request][nil]
+        begin
+          callback.call(@request, @buffer)
+        rescue => e
+          Chuck.log_error(e)
+          http_error(504, 'Gateway timeout')
+        end
       end
 
+      establish_backend_connection(uri.host, uri.port) unless @backend
       @backend.send_data(@buffer)
     rescue => e
       Chuck.log_error(e)

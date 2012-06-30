@@ -13,9 +13,21 @@ scope 'www.google.com', 443 do
 end
 
 on_request 'github.com' do |request, data|
-  p request.headers.content
+  print  "%s - "   % Time.now.strftime('%F %T')
+  print  "%5s %s " % [request.method, request.uri]
 end
 
 on_response 'github.com' do |response, data|
-  p response.headers.content
+  print  "%s %d %s" % [response.status, response.body.bytesize, response.headers.select {|k, v| k == 'Server'}]
+  puts   $/, '-' * 80
+end
+
+on_request do |request, data|
+  print  "%s - "   % Time.now.strftime('%F %T')
+  print  "%5s %s " % [request.method, request.uri]
+end
+
+on_response do |response, data|
+  print  "%s %d  " % [response.status, response.body.bytesize]
+  puts   $/, '-' * 80
 end

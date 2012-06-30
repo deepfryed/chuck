@@ -13,7 +13,7 @@ module Chuck
     def self.load tuple
       allocate.tap do |instance|
         instance.tuple   = tuple
-        instance.headers = Headers.new Yajl.load(tuple[:headers])
+        instance.headers = Headers.new Yajl.load(tuple[:headers] || '[]')
       end
     end
 
@@ -34,7 +34,7 @@ module Chuck
     end
 
     def lifetime
-      response ? response.created_at - created_at : 0
+      response && response.created_at ? response.created_at - created_at : 0
     end
 
     def content_type
