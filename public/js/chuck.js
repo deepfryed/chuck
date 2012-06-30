@@ -1,3 +1,11 @@
+var chuck  = chuck || {};
+chuck.home = (function (home) {
+  home.tables = function () {
+    $('body#page_home table.requests').tables();
+  };
+  return home;
+})(chuck.home || {});
+
 $(document).ready(function() {
-  $('body#page_home table.requests').tables();
+  chuck.home.tables();
 });

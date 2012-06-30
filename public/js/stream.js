@@ -1,14 +1,18 @@
-$(document).ready(function() {
-  var Socket = "MozWebSocket" in window ? MozWebSocket : WebSocket;
-  var ws     = new Socket("ws://localhost:8998");
-  var paused = false;
+var chuck  = chuck || {};
+var Socket = "MozWebSocket" in window ? MozWebSocket : WebSocket;
 
-  ws.onmessage = function(evt) {
-    if (!paused) {
+chuck.stream = (function (stream) {
+  stream.start = function () {
+    var ws = new Socket("ws://" + ws_server);
+    ws.onmessage = function(evt) {
       $('#stream > tr.message').remove();
       $('#stream').prepend(evt.data);
-    }
+    };
   };
+  return stream;
+})(chuck.stream || {});
 
-  $('#stream > tr').focus(function() { paused = true; }, function() { paused = false; });
+/* TODO: reconnect */
+$(document).ready(function() {
+  chuck.stream.start();
 });
