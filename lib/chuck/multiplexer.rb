@@ -102,6 +102,10 @@ module Chuck
     end
 
     def forward_to_client data
+      if callback = profile.callbacks[:response][@request.uri.host]
+        callback.call(@request.response, data)
+      end
+
       @pending -= 1
       send_data(data)
       close_connection(true)
@@ -132,6 +136,11 @@ module Chuck
       end
 
       establish_backend_connection(uri.host, uri.port) unless @backend
+
+      if callback = profile.callbacks[:request][@request.uri.host]
+        callback.call(@request, @buffer)
+      end
+
       @backend.send_data(@buffer)
     rescue => e
       Chuck.log_error(e)

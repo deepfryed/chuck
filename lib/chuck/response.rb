@@ -9,16 +9,20 @@ module Chuck
     attribute :body,       Swift::Type::String
     attribute :created_at, Swift::Type::DateTime
 
-    def headers_hash
-      @headers_hash ||= Yajl.load(headers.to_s) || {}
+    def self.load tuple
+      allocate.tap do |instance|
+        instance.tuple   = tuple
+        instance.headers = Headers.new Yajl.load(tuple[:headers])
+      end
     end
 
     def raw_headers
-      headers_hash.map {|pair| pair.join(': ')}.join($/)
+      headers.map {|pair| pair.join(': ')}.join($/)
     end
 
     def content_type
-      headers_hash.select {|k, v| k.downcase == 'content-type'}.values.first
+      pair = headers.find {|k, v| k.downcase == 'content-type'}
+      pair && pair.last
     end
 
     def image?

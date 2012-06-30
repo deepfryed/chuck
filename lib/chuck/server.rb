@@ -59,26 +59,26 @@ module Chuck
 
     attr_reader :content
 
-    def initialize
-      @content = []
+    def initialize content = []
+      @content = content.flatten
       @state   = nil
     end
 
     def add type, value
-      if @state == type
-        @content.last << value
-      else
-        @content << value
-      end
+      (@state == type ? @content.last : @content) << value
       @state = type
     end
 
     def to_s
-      Yajl.dump(Hash[*@content])
+      Yajl.dump(content)
     end
 
     def each &block
       @content.each_slice(2, &block)
+    end
+
+    def content
+      @content.each_slice(2).entries
     end
   end # Headers
 end # Chuck

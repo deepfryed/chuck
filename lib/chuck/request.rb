@@ -10,6 +10,13 @@ module Chuck
     attribute :body,       Swift::Type::String
     attribute :created_at, Swift::Type::DateTime, default: proc { DateTime.now }
 
+    def self.load tuple
+      allocate.tap do |instance|
+        instance.tuple   = tuple
+        instance.headers = Headers.new Yajl.load(tuple[:headers])
+      end
+    end
+
     def connect?
       method == 'CONNECT'
     end
@@ -23,7 +30,7 @@ module Chuck
     end
 
     def raw_headers
-      Yajl.load(headers).map {|pair| pair.join(': ')}.join($/)
+      headers.map {|pair| pair.join(': ')}.join($/)
     end
 
     def lifetime
@@ -43,7 +50,7 @@ module Chuck
     end
 
     def curl_headers
-      (String === headers ? Yajl.load(headers) : headers).map {|pair| %Q{-H "#{pair.join(': ')}"}}.join(' ')
+      headers.map {|pair| %Q{-H "#{pair.join(': ')}"}}.join(' ')
     end
 
     def self.recent

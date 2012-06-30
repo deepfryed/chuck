@@ -24,6 +24,10 @@ module Chuck
       end
     end
 
+    def callbacks
+      @callbacks ||= {request: {}, response: {}}
+    end
+
     def scope_key host, port
       "#{host}:#{port}"
     end
@@ -37,6 +41,14 @@ module Chuck
         [files].flatten.each do |file|
           instance_eval File.read(file)
         end
+      end
+
+      def on_request host, &callback
+        callbacks[:request][host] = callback
+      end
+
+      def on_response host, &callback
+        callbacks[:response][host] = callback
       end
 
       def rewrite regex, &callback
