@@ -19,7 +19,7 @@ module Chuck
     end
 
     def response
-      Response.execute("select * from responses where request_id = ? limit 1", id).first
+      @response ||= Response.execute("select * from responses where request_id = ? limit 1", id).first
     end
 
     def raw_headers
@@ -27,11 +27,15 @@ module Chuck
     end
 
     def lifetime
-      tuple[:finished_at] ? (tuple[:finished_at] - created_at) : 0
+      response ? response.created_at - created_at : 0
+    end
+
+    def content_type
+      response && response.content_type
     end
 
     def status
-      tuple[:status] || (response && response.status)
+      response && response.status
     end
 
     def curl
@@ -43,12 +47,7 @@ module Chuck
     end
 
     def self.recent
-      execute(%q{
-        select r.*, re.created_at as finished_at, re.status
-        from requests r left join responses re on (re.request_id = r.id)
-        where r.method != 'CONNECT1'
-        order by r.id desc
-      })
+      execute("select * from requests where method != 'CONNECT' order by id desc")
     end
   end
 end

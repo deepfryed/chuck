@@ -23,7 +23,13 @@ body > #wrapper {
 }
 
 #wrapper > .container {
+  width: 90%;
   padding: 100px 0 80px 0;
+}
+
+#footer .container,
+.navbar-inner .container {
+  width: 90%;
 }
 
 .navbar a.brand {
@@ -114,10 +120,10 @@ table.request tr.response td {
 }
 
 /* lolz */
-.empty {
+.sad-cat {
+  font-size: 3em;
   margin-top: 20px;
   font-family: Impact, 'Arial Black';
-  font-size: 3em;
 }
 
 /* menu */

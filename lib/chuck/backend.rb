@@ -13,7 +13,6 @@ module Chuck
       @headers  = Headers.new
       @response = Response.create(request_id: @request.id, session_id: @request.session_id, body: '')
       @parser   = HTTP::Parser.new(HTTP::Parser::TYPE_RESPONSE)
-      @segments = []
 
       %w(on_message_complete on_header_field on_header_value on_body).each do |name|
         @parser.send(name, &method(name.to_sym))
@@ -21,11 +20,11 @@ module Chuck
     end
 
     def on_header_field value
-      @headers << value
+      @headers.add(:f, value)
     end
 
     def on_header_value value
-      @headers << value
+      @headers.add(:v, value)
     end
 
     def on_body data
@@ -54,7 +53,6 @@ module Chuck
       @buffer = ''
     rescue => e
       Chuck.log_error(e)
-      IO.write("response.bad", Marshal.dump(@segments))
       unbind
     end
 
@@ -67,7 +65,6 @@ module Chuck
     end
 
     def receive_data data
-      @segments << data
       @buffer << data
       @parser << data
     rescue => e

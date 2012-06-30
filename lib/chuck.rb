@@ -1,4 +1,5 @@
 require 'pathname'
+require 'swift'
 
 module Chuck
   class << self

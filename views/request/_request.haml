@@ -6,6 +6,7 @@
     %a{href: request.uri}= request.uri
   %td= request.created_at.strftime('%F %T')
   %td= request.status || 504
+  %td= request.content_type
   %td= '%.4f' % request.lifetime
   %td.details
     %a{href: url(:request, request.id), target: '_new'} &raquo;

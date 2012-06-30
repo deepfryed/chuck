@@ -7,26 +7,6 @@ require 'chuck/profile'
 require 'chuck/ssl'
 
 module Chuck
-  class Headers
-    include Enumerable
-
-    def initialize
-      @content = []
-    end
-
-    def << value
-      @content << value
-    end
-
-    def to_s
-      Yajl.dump(Hash[*@content])
-    end
-
-    def each &block
-      @content.each_slice(2, &block)
-    end
-  end
-
   module Multiplexer
     attr_reader :options, :profile
 
@@ -54,11 +34,11 @@ module Chuck
     end
 
     def on_header_field value
-      @request.headers << value
+      @request.headers.add(:f, value)
     end
 
     def on_header_value value
-      @request.headers << value
+      @request.headers.add(:v, value)
     end
 
     def on_body data

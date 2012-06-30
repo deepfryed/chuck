@@ -50,4 +50,32 @@ module Chuck
       end
     end
   end # Server
+
+  class Headers
+    include Enumerable
+
+    attr_reader :content
+
+    def initialize
+      @content = []
+      @state   = nil
+    end
+
+    def add type, value
+      if @state == type
+        @content.last << value
+      else
+        @content << value
+      end
+      @state = type
+    end
+
+    def to_s
+      Yajl.dump(Hash[*@content])
+    end
+
+    def each &block
+      @content.each_slice(2, &block)
+    end
+  end # Headers
 end # Chuck

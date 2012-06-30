@@ -7,6 +7,7 @@
         %th URI
         %th Started
         %th Status
+        %th Content Type
         %th{data: {type: 'numeric'}} Lasted
         %th
     %tbody
@@ -14,5 +15,5 @@
         != haml :'request/_request', locals: {request: request}
 - else
   %img{src: '/img/sad-cat.jpg'}
-  .empty
-    I EATD TEH LOGS, GO FETCH MOAR
+  .sad-cat
+    I EATD TEH LOGS, IMMA HUNGRY
