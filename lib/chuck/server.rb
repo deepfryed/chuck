@@ -45,6 +45,9 @@ module Chuck
         puts "  * http://localhost:#{port + 1}/"
         puts "  * http://#{ip}:#{port + 1}/"
         puts $/
+        puts "You should be able to retrieve the SSL CA certificate at"
+        puts "  * http://#{ip}:#{port + 1}/c"
+        puts $/
 
         Chuck.proxy_uri = "#{host}:#{port}"
       end

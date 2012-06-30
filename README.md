@@ -56,6 +56,18 @@ curl -v -k --proxy 127.0.0.1:8080 https://www.google.com/
 
 Go to [http://localhost:8081/](http://localhost:8081/) or whatever url chuck displays.
 
+
+## Chuck SSL CA
+
+Chuck uses a self-signed certificate to construct SSL certificates on the fly. This will trigger warnings in
+your browser or applications.
+
+To get around those, add Chuck's cerificate as a trusted authority in your browser or mobile device.
+
+* iPhone, Android: navigate to the CA url displayed on console when you run Chuck
+* Firefox, etc: Add `certs/server.crt` to your trusted certificates list
+* openssl: Copy `certs/server.crt` to your openssl certs directory and create a symlink to it called `39354d07.0`
+
 ## Notes
 
 * The proxy always intercepts SSL requests even if there is no remap of request, this is not ideal.

@@ -43,6 +43,11 @@ module Chuck
       resource.body
     end
 
+    get '/c' do
+      content_type 'application/x-x509-ca-cert'
+      File.read(Chuck.root + 'certs/server.crt')
+    end
+
     error Sinatra::NotFound do
       '404 Not Found'
     end
