@@ -90,14 +90,15 @@ module Chuck
     def http_connect
       host = @request.uri.host
       establish_backend_connection(@request.uri.host, @request.uri.port)
-      http_response(200, "Connected")
+      @buffer = ''
+    end
 
+    def start_ssl certificate
+      http_response(200, "Connected")
       if @request.ssl?
-        @ssl = SSL.certificate(host)
+        @ssl = SSL.certificate(OpenSSL::X509::Certificate.new(certificate).subject)
         start_tls(cert_chain_file: @ssl.certificate_file, private_key_file: @ssl.private_key_file, verify_peer: false)
       end
-
-      @buffer = ''
     end
 
     def forward_to_client data

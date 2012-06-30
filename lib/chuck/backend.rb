@@ -60,6 +60,10 @@ module Chuck
       start_tls if ssl?
     end
 
+    def ssl_handshake_completed
+      @plexer.start_ssl(get_peer_cert)
+    end
+
     def ssl?
       @request.ssl? or port == 443
     end

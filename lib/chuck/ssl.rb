@@ -12,17 +12,17 @@ module Chuck
 
     attr_reader :rsa, :ca
 
-    def self.certificate host
-      @certs       ||= {}
-      @certs[host] ||= new('C', 'AU', 'O', host, 'OU', host, 'CN', host)
+    def self.certificate subject
+      @certs               ||= {}
+      @certs[subject.to_s] ||= new(subject)
     end
 
-    def initialize *cn
+    def initialize subject
       @rsa = OpenSSL::PKey::RSA.new(File.read(RSA))
       @ca  = OpenSSL::X509::Certificate.new(File.read(CA))
 
       @crt = Dir::Tmpname.create('chuck-crt') {}
-      IO.write(@crt, create(cn.size == 1 ? cn.first : cn).to_pem)
+      IO.write(@crt, create(subject).to_pem)
       ObjectSpace.define_finalizer(self, method(:finalize))
     end
 
@@ -39,10 +39,9 @@ module Chuck
     end
 
     private
-      def create cn
-        cn = cn.each_slice(2).entries
+      def create subject
         OpenSSL::X509::Certificate.new.tap do |crt|
-          crt.subject    = OpenSSL::X509::Name.new(cn)
+          crt.subject    = subject
           crt.issuer     = ca.subject
           crt.not_before = Time.now
           crt.not_after  = Time.now + 365 * 24 * 60 * 60
