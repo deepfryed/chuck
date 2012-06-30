@@ -69,7 +69,7 @@ module Chuck
       @parser << data
     rescue => e
       Chuck.log_error(e)
-      http_error(400, 'Invalid Headers', e)
+      http_error(400, 'Invalid Headers')
     end
 
     def parse_url url
@@ -101,7 +101,7 @@ module Chuck
       end
     end
 
-    def forward_to_client data
+    def response_callback data
       if callback = profile.callbacks[:response][@request.uri.host] || profile.callbacks[:response][nil]
         begin
           callback.call(@request.response, data)
@@ -110,7 +110,10 @@ module Chuck
           http_error(504, 'Gateway timeout')
         end
       end
+    end
 
+    def forward_to_client data
+      response_callback(data)
       @pending -= 1
       send_data(data)
       close_connection(true)
@@ -118,7 +121,7 @@ module Chuck
 
     def finish
       @channel.push(request_html) unless @request.connect?
-      http_error(504, 'Gateway timeout') if @pending > 0
+      http_error(504, 'Gateway timeout', 'Backend closed connection') if @pending > 0
     end
 
     def request_html
@@ -132,6 +135,17 @@ module Chuck
       ['/', path.compact.map(&:to_s)].flatten.join('/').gsub(%r{/+}, '/') + params
     end
 
+    def request_callback
+      if callback = profile.callbacks[:request][@request.uri.host] || profile.callbacks[:request][nil]
+        begin
+          callback.call(@request, @buffer)
+        rescue => e
+          Chuck.log_error(e)
+          http_error(504, 'Gateway Timeout', 'Backend closed connection or timed out')
+        end
+      end
+    end
+
     def forward_to_server
       profile.process!(@buffer)
       method, uri = parse_rewritten_header
@@ -140,20 +154,18 @@ module Chuck
         @request.update(uri: absolute_uri(uri), rewritten: true, method: method)
       end
 
-      if callback = profile.callbacks[:request][@request.uri.host] || profile.callbacks[:request][nil]
-        begin
-          callback.call(@request, @buffer)
-        rescue => e
-          Chuck.log_error(e)
-          http_error(504, 'Gateway timeout')
-        end
+      if !@backend && !uri.host
+        http_error(400, 'Bad Request', 'No Host Specificed')
+        return
       end
 
+      request_callback
+      @r_callback_done = true
       establish_backend_connection(uri.host, uri.port) unless @backend
       @backend.send_data(@buffer)
     rescue => e
       Chuck.log_error(e)
-      http_error(400, 'Bad Header', e)
+      http_error(400, 'Bad Request', 'Error parsing request')
     end
 
     def absolute_uri uri
@@ -192,13 +204,21 @@ module Chuck
       [match[:method], URI.parse(match[:uri])]
     end
 
-    def http_error code, message, e = nil
-      http_response(code, message)
+    def http_error code, status, message = ''
+      response = @request.response || Response.create(request_id: @request.id, session_id: @session.id)
+      response.update(status: code, body: message)
+
+      request_callback unless @r_callback_done
+      response_callback(message)
+
+      http_response(code, status, message)
       close_connection(true)
     end
 
-    def http_response code, message
-      send_data("HTTP/1.1 #{code} #{message}\r\n\r\n")
+    def http_response code, status, message = ''
+      send_data("HTTP/1.1 #{code} #{status}\r\n")
+      send_data("Content-Length: #{message.bytesize}\r\n\r\n")
+      send_data(message)
     end
   end # Multiplexer
 end # Chuck
