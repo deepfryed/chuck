@@ -1,9 +1,9 @@
 require 'uri'
 require 'yajl'
-require 'haml'
 require 'cuuid/uuid'
 require 'http-parser'
 require 'chuck/profile'
+require 'chuck/render'
 require 'chuck/ssl'
 
 module Chuck
@@ -18,7 +18,6 @@ module Chuck
     end
 
     def initialize options = {}
-      @buffer  = ''
       @pending = 0
       @options = options
       @channel = options.fetch(:channel)
@@ -28,21 +27,26 @@ module Chuck
       @session = Session.create
       @request = Request.new(session_id: @session.id, body: '', headers: Headers.new)
 
-      %w(on_message_complete on_url on_header_field on_header_value on_body).each do |name|
+      %w(on_message_complete on_url on_header_field on_header_value on_headers_complete on_body).each do |name|
         @parser.send(name, &method(name.to_sym))
       end
     end
 
     def on_url url
-      @request.uri = parse_url(url) unless @request.uri
+      @request.uri = parse_url(@request.uri, url)
     end
 
     def on_header_field value
-      @request.headers.add(:f, value)
+      @request.headers.stream(:f, value)
     end
 
     def on_header_value value
-      @request.headers.add(:v, value)
+      @request.headers.stream(:v, value)
+    end
+
+    def on_headers_complete
+      @request.version = @parser.http_version
+      @request.headers.stream_complete
     end
 
     def on_body data
@@ -52,49 +56,48 @@ module Chuck
     def on_message_complete
       @request.body   = @request.body.force_encoding(Encoding::UTF_8)
       @request.method = @parser.http_method
-      Request.create(@request) unless @request.id
+      @request.save
       intercept
     end
 
     def intercept
       @parser.reset
+      profile.process!(@request)
+      @request.save
+
       if @request.connect?
         http_connect
       else
         @pending += 1
         forward_to_server
       end
-      @buffer = ''
     end
 
-    # data from client
+    # Data from client
     def receive_data data
-      @buffer << data
       @parser << data
     rescue => e
       Chuck.log_error(e)
       http_error(400, 'Invalid Headers')
     end
 
-    def parse_url url
+    def parse_url base, url
       case url
-        when %r{^[^/]+:\d+$}
-          uri_generic(*url.split(/:/))
-        else %r{^https?://}i
+        when %r{^(?<host>[^/:]+):(?<port>\d+)$}
+          URI.parse("%s://#{$~[:host]}" % ($~[:port].to_i == 443 ? "https" : "http"))
+        when %r{^https?://}i
           URI.parse(url)
+        else
+          base + url
       end
     end
 
-    def uri_generic host, port
-      URI.parse("").tap do |uri|
-        uri.host, uri.port = host, port.to_i
-      end
+    def https_uri host, port
+      URI.parse("https://#{host}:#{port}/")
     end
 
     def http_connect
-      host = @request.uri.host
       establish_backend_connection(@request.uri.host, @request.uri.port)
-      @buffer = ''
     end
 
     def start_ssl certificate
@@ -105,10 +108,10 @@ module Chuck
       end
     end
 
-    def response_callback data
+    def response_callback response
       if callback = profile.callbacks[:response][@request.uri.host] || profile.callbacks[:response][nil]
         begin
-          callback.call(@request.response, data)
+          callback.call(response)
         rescue => e
           Chuck.log_error(e)
           http_error(504, 'Gateway timeout')
@@ -116,33 +119,27 @@ module Chuck
       end
     end
 
-    def forward_to_client data
-      response_callback(data)
+    def forward_to_client response
+      response_callback(response)
+      response.save
       @pending -= 1
-      send_data(data)
+      send_data(response.to_s)
       close_connection(true)
     end
 
     def finish
-      @channel.push(request_html) unless @request.connect?
-      http_error(504, 'Gateway timeout', 'Backend closed connection') if @pending > 0
-    end
-
-    def request_html
-      haml = Haml::Engine.new(File.read(Chuck.root + 'views/request/_request.haml'))
-      haml.render(self, request: @request)
-    end
-
-    def url *path
-      params = path[-1].respond_to?(:to_hash) ? path.delete_at(-1).to_hash : {}
-      params = params.empty? ? '' : '?' + URI.escape(params.map{|*a| a.join('=')}.join('&')).to_s
-      ['/', path.compact.map(&:to_s)].flatten.join('/').gsub(%r{/+}, '/') + params
+      if @channel && !@request.connect?
+        @channel.push Render.haml('request/_request.haml', request: @request)
+      end
+      if @pending > 0
+        http_error(504, 'Gateway timeout', 'Backend closed connection')
+      end
     end
 
     def request_callback
       if callback = profile.callbacks[:request][@request.uri.host] || profile.callbacks[:request][nil]
         begin
-          callback.call(@request, @buffer)
+          callback.call(@request)
         rescue => e
           Chuck.log_error(e)
           http_error(504, 'Gateway Timeout', 'Backend closed connection or timed out')
@@ -151,22 +148,15 @@ module Chuck
     end
 
     def forward_to_server
-      profile.process!(@buffer)
-      method, uri = parse_rewritten_header
-
-      if @backend or @request.uri != uri
-        @request.update(uri: absolute_uri(uri), rewritten: true, method: method)
-      end
-
-      if !@backend && !uri.host
+      unless @request.uri.host
         http_error(400, 'Bad Request', 'No Host Specificed')
         return
       end
 
       request_callback
       @r_callback_done = true
-      establish_backend_connection(uri.host, uri.port) unless @backend
-      @backend.send_data(@buffer)
+      establish_backend_connection(@request.uri.host, @request.uri.port) unless @backend
+      @backend.send_data(@request.to_s)
     rescue => e
       Chuck.log_error(e)
       http_error(400, 'Bad Request', 'Error parsing request')
@@ -191,7 +181,7 @@ module Chuck
       end
 
       if port == 443 && @request.uri.host != host
-        @request.update(uri: uri_generic(host, port), rewritten: true)
+        @request.update(uri: https_uri(host, port), rewritten: true)
       end
 
       @backend = EM.connect(host, port, Backend, host: host, port: port, plexer: self, request: @request)
@@ -202,18 +192,12 @@ module Chuck
       @backend = nil
     end
 
-    def parse_rewritten_header
-      match = @buffer.match(METHOD_URI_RE) || @buffer.match(METHOD_PATH_RE)
-      match or raise 'Invalid URI'
-      [match[:method], URI.parse(match[:uri])]
-    end
-
     def http_error code, status, message = ''
       response = @request.response || Response.create(request_id: @request.id, session_id: @session.id)
       response.update(status: code, body: message)
 
       request_callback unless @r_callback_done
-      response_callback(message)
+      response_callback(response)
 
       http_response(code, status, message)
       close_connection(true)

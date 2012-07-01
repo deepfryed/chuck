@@ -1,11 +1,7 @@
-require 'zlib'
-require 'stringio'
-
 module Chuck
   module Backend
     attr_reader :host, :port
     def initialize options
-      @buffer   = ''
       @plexer   = options.fetch(:plexer)
       @host     = options.fetch(:host)
       @port     = options.fetch(:port)
@@ -14,43 +10,33 @@ module Chuck
       @response = Response.create(request_id: @request.id, session_id: @request.session_id, body: '')
       @parser   = HTTP::Parser.new(HTTP::Parser::TYPE_RESPONSE)
 
-      %w(on_message_complete on_header_field on_header_value on_body).each do |name|
+      %w(on_message_complete on_header_field on_header_value on_headers_complete on_body).each do |name|
         @parser.send(name, &method(name.to_sym))
       end
     end
 
     def on_header_field value
-      @headers.add(:f, value)
+      @headers.stream(:f, value)
     end
 
     def on_header_value value
-      @headers.add(:v, value)
+      @headers.stream(:v, value)
+    end
+
+    def on_headers_complete
+      @response.version = @parser.http_version
+      @headers.stream_complete
     end
 
     def on_body data
       @response.body << data
     end
 
-    def deflate
-      case @headers.map {|pair| pair.join(': ')}.join($/)
-        when %r{Content-Encoding: +deflate}i
-          @response.body = Zlib::Inflate.inflate(@response.body)
-        when %r{Content-Encoding: +gzip}i
-          zstream = Zlib::GzipReader.new(StringIO.new(@response.body))
-          @response.body = zstream.read
-          zstream.close
-      end
-    rescue => e
-      Chuck.log_error(e)
-    end
-
     def on_message_complete
-      deflate if @response.body.bytesize > 0
       @response.body.force_encoding(Encoding::UTF_8)
       @response.update(created_at: DateTime.now, status: @parser.http_status, headers: @headers)
-      @plexer.forward_to_client(@buffer)
+      @plexer.forward_to_client(@response)
       @parser.reset
-      @buffer = ''
     rescue => e
       Chuck.log_error(e)
       unbind
@@ -69,7 +55,6 @@ module Chuck
     end
 
     def receive_data data
-      @buffer << data
       @parser << data
     rescue => e
       Chuck.log_error(e)

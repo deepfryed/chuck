@@ -1,3 +1,6 @@
+require 'zlib'
+require 'stringio'
+
 module Chuck
   class Response < Swift::Scheme
     store :responses
@@ -5,7 +8,8 @@ module Chuck
     attribute :request_id, Swift::Type::Integer
     attribute :session_id, Swift::Type::String
     attribute :status,     Swift::Type::Integer
-    attribute :headers,    Swift::Type::String
+    attribute :version,    Swift::Type::String # http version
+    attribute :headers,    Swift::Type::String, default: proc { Headers.new }
     attribute :body,       Swift::Type::String
     attribute :created_at, Swift::Type::DateTime
 
@@ -16,10 +20,45 @@ module Chuck
       end
     end
 
-    def raw_headers
-      headers.map {|pair| pair.join(': ')}.join($/)
+    def save
+      id ? update : Request.create(self)
     end
 
+    def to_s
+      r  = "HTTP/#{version} #{status}\r\n"
+      r += http_headers + "\r\n"
+      r += http_body
+    end
+
+    # preserve chunked response when serializing it.
+    def http_body
+      if headers.find {|pair| %r{transfer-encoding: chunked}i.match(pair.join(': '))}
+        "#{tuple[:body].bytesize.to_s(16)}\r\n" + tuple[:body] + "\r\n0\r\n\r\n"
+      else
+        tuple[:body]
+      end
+    end
+
+    def http_headers
+      headers.map {|pair| pair.join(': ') + "\r\n"}.join
+    end
+
+    def body
+      content = tuple[:body]
+      if content.bytesize > 0
+        case headers.map {|pair| pair.join(': ')}.join($/)
+          when %r{Content-Encoding: +deflate}i
+            content = Zlib::Inflate.inflate(content)
+          when %r{Content-Encoding: +gzip}i
+            zstream = Zlib::GzipReader.new(StringIO.new(content))
+            content = zstream.read
+            zstream.close
+        end
+      end
+      content
+    end
+
+    # TODO: helpers that don't actually belong here
     def content_type
       pair = headers.find {|k, v| k.downcase == 'content-type'}
       pair && pair.last

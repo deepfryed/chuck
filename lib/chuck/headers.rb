@@ -5,13 +5,24 @@ module Chuck
     attr_reader :content
 
     def initialize content = []
-      @content = content.flatten
+      @content = content
+      @bucket  = []
       @state   = nil
     end
 
-    def add type, value
-      (@state == type ? @content.last : @content) << value
+    def stream type, value
+      (@state == type ? @bucket.last : @bucket) << value
       @state = type
+    end
+
+    def stream_complete
+      @content += @bucket.each_slice(2).entries
+      @bucket.clear
+    end
+
+    def replace key, value
+      content.reject! {|f, v| f == key}
+      content << [key, value]
     end
 
     def to_s
@@ -19,11 +30,7 @@ module Chuck
     end
 
     def each &block
-      @content.each_slice(2, &block)
-    end
-
-    def content
-      @content.each_slice(2).entries
+      content.each(&block)
     end
   end # Headers
 end # Chuck

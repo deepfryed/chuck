@@ -6,7 +6,8 @@ module Chuck
     attribute :rewritten,  Swift::Type::Boolean
     attribute :method,     Swift::Type::String
     attribute :uri,        Swift::Type::String
-    attribute :headers,    Swift::Type::String
+    attribute :version,    Swift::Type::String # http version
+    attribute :headers,    Swift::Type::String,   default: proc { Headers.new }
     attribute :body,       Swift::Type::String
     attribute :created_at, Swift::Type::DateTime, default: proc { DateTime.now }
 
@@ -15,6 +16,27 @@ module Chuck
         instance.tuple   = tuple
         instance.headers = Headers.new Yajl.load(tuple[:headers] || '[]')
       end
+    end
+
+    def save
+      id ? update : Request.create(self)
+    end
+
+    def to_s
+      r  = "#{method} #{uri} HTTP/#{version}\r\n"
+      r += http_headers + "\r\n"
+      r += body
+    end
+
+    def relative_uri
+      abs  = uri.kind_of?(URI::HTTP) ? uri : URI.parse(uri)
+      rel  = "#{abs.path}#{abs.fragment}"
+      rel += "?#{abs.query}" if abs.query
+      rel
+    end
+
+    def http_headers
+      headers.map {|pair| pair.join(': ') + "\r\n"}.join
     end
 
     def connect?
@@ -29,10 +51,11 @@ module Chuck
       @response ||= Response.execute("select * from responses where request_id = ? limit 1", id).first
     end
 
-    def raw_headers
-      headers.map {|pair| pair.join(': ')}.join($/)
+    def self.recent
+      execute("select * from requests where method != 'CONNECT' order by id desc")
     end
 
+    # TODO: helpers that don't actually belong here
     def lifetime
       response && response.created_at ? response.created_at - created_at : 0
     end
@@ -51,10 +74,6 @@ module Chuck
 
     def curl_headers
       headers.map {|pair| %Q{-H "#{pair.join(': ')}"}}.join(' ')
-    end
-
-    def self.recent
-      execute("select * from requests where method != 'CONNECT' order by id desc")
     end
   end
 end

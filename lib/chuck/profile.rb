@@ -1,26 +1,16 @@
+require 'chuck/condition'
+
 module Chuck
   class Profile
-    MAX_REWRITES = 5
-    SEPERATOR    = '~' * 80
-
     attr_reader :host, :port
 
     def initialize files = []
       setup(files)
     end
 
-    def process! buffer
-      index = 0
-      rewrite_count = 0
-      while index < rules.size && rewrite_count < MAX_REWRITES
-        re, callback = rules[index - 1]
-        if match = re.match(buffer)
-          buffer.sub!(re, callback.call(match))
-          # restart the matching for cascaded rewriting.
-          index = 0
-          rewrite_count += 1
-        end
-        index += 1
+    def process! request
+      rules.each do |condition, processor|
+        processor.call(request) if condition.match?(request)
       end
     end
 
@@ -51,34 +41,35 @@ module Chuck
         callbacks[:response][host] = callback
       end
 
-      def rewrite regex, &callback
-        rules << [regex, callback]
+      def rules
+        @rules ||= []
       end
 
-      def map *args, &callback
-        raise ArgumentError, "wrong number of arguments(#{args.size} for 2..3)" if args.size < 2 or args.size > 3
-        verb, from, to = args.size == 2 ? ['GET', *args] : args
-        verb = verb.to_s.upcase
-        port = from.match(%r{https://}i) ? 443 : 80
-        re   = %r{\A#{verb} #{from}(?<port>:#{port})?(?<path>/[^\s]*)? (?<rest>.+)\z}m
+      def capture condition, &callback
+        rules << [Condition.new(condition), callback]
+      end
 
-        if callback
-          rewrite(re) do |match|
-            callback.call("#{verb} #{to}#{match[:path]} #{match[:rest]}")
-          end
-        else
-          rewrite(re) do |match|
-            "#{verb} #{to}#{match[:path]} #{match[:rest]}"
-          end
+      def map from, to, &callback
+        to = URI.parse(to)
+        raise ArgumentError, "to needs to be http:// or https:// uris" unless %r{https?}i.match(to.scheme)
+
+        case from
+          when %r{^https?://}i
+            from = %r{^#{from}}
+          when Regexp
+            # nop
+          else
+            raise ArgumentError, "from needs to be a Regexp or http:// or https:// uri"
+        end
+
+        capture(uri: from) do |request|
+          request.uri = to
+          callback.call(request) if callback
         end
       end
 
       def scope name, port, &block
         (scopes[scope_key(name, port)] ||= Profile.new).instance_eval(&block)
-      end
-
-      def rules
-        @rules ||= []
       end
 
       def connect host, port
