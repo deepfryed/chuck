@@ -13,6 +13,10 @@ module Chuck
     METHOD_URI_RE  = %r{\A(?<method>[[:upper:]]+)\s(?<uri>http://[^\s]+)}i
     METHOD_PATH_RE = %r{\A(?<method>[[:upper:]]+)\s(?<uri>/[^\s]*)}i
 
+    def self.listen host, port, options = {}
+      EM.start_server(host, port, self, options)
+    end
+
     def initialize options = {}
       @buffer  = ''
       @pending = 0

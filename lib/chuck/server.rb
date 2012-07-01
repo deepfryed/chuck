@@ -17,7 +17,6 @@ module Chuck
       @host    = '0.0.0.0'
       @port    = options.fetch(:port,    8080)
       @profile = options.fetch(:profile, Dir[Chuck.root + 'profiles/sample.rb'])
-      @ssl     = Chuck.ssl_config
     end
 
     def ip
@@ -35,7 +34,8 @@ module Chuck
       EM.run do
         stream = Stream.new(host, 8998)
         stream.run
-        EM.start_server(host, port, Multiplexer, ssl_config: @ssl, profile: @profile, channel: stream.channel)
+
+        Multiplexer.listen(host, port, profile: @profile, channel: stream.channel)
         Thin::Server.start(host, port + 1, Chuck::Web)
 
         puts "Chuck::Server - listening on #{ip}:#{port}"
@@ -49,8 +49,6 @@ module Chuck
         puts "You should be able to retrieve the SSL CA certificate at"
         puts "  * http://#{ip}:#{port + 1}/c"
         puts $/
-
-        Chuck.proxy_uri = "#{host}:#{port}"
       end
     end
   end # Server
