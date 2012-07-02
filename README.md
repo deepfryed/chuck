@@ -31,8 +31,12 @@ map 'http://www.google.com.au', 'http://localhost:3000'
 
 scope 'www.google.com', 443 do
   connect 'github.com', 443
-  map 'https://github.com/', 'https://github.com/dashboard' do |data|
+  map 'https://github.com/', 'https://github.com/dashboard' do |request|
     request.headers.replace 'Host', 'github.com'
+  end
+
+  on_response do |response|
+    response.headers.replace 'X-FooBar-Key', 'test'
   end
 end
 ```
