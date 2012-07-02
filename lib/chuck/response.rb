@@ -20,6 +20,10 @@ module Chuck
       end
     end
 
+    def request
+      Request.get(id: request_id)
+    end
+
     def save
       id ? update : Request.create(self)
     end
