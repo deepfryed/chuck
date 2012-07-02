@@ -18,6 +18,11 @@ module Chuck
       haml :'request/index'
     end
 
+    get '/c' do
+      content_type 'application/x-x509-ca-cert'
+      File.read(Chuck.root + 'certs/server.crt')
+    end
+
     get '/stream' do
       haml :stream
     end
@@ -41,11 +46,6 @@ module Chuck
       resource = Response.get(id: id) or raise Sinatra::NotFound
       content_type resource.content_type
       resource.body
-    end
-
-    get '/c' do
-      content_type 'application/x-x509-ca-cert'
-      File.read(Chuck.root + 'certs/server.crt')
     end
 
     error Sinatra::NotFound do

@@ -23,7 +23,7 @@ module Chuck
     end
 
     def to_s
-      r  = "#{method} #{uri} HTTP/#{version}\r\n"
+      r  = "#{method} #{relative_uri} HTTP/#{version}\r\n"
       r += http_headers + "\r\n"
       r += body
     end
@@ -32,6 +32,7 @@ module Chuck
       abs  = uri.kind_of?(URI::HTTP) ? uri : URI.parse(uri)
       rel  = "#{abs.path}#{abs.fragment}"
       rel += "?#{abs.query}" if abs.query
+      rel  = '/' + rel unless %r{^/}.match(rel)
       rel
     end
 

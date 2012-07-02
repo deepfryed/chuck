@@ -38,9 +38,14 @@ module Chuck
         Multiplexer.listen(host, port, profile: @profile, channel: stream.channel)
         Thin::Server.start(host, port + 1, Rack::CommonLogger.new(Chuck::Web))
 
+        puts $/
         puts "Chuck::Server - listening on #{ip}:#{port}"
         puts "Chuck::Web    - listening on #{ip}:#{port + 1}"
+        puts "Chuck::Stream - listening on #{ip}:8998"
 
+        puts $/
+        puts "You should point your mobile device or browser at the proxy server below"
+        puts "  * #{ip}:#{port}"
         puts $/
         puts "You should be able to view the logs at"
         puts "  * http://localhost:#{port + 1}/"

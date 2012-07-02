@@ -119,6 +119,21 @@ module Chuck
       end
     end
 
+    def forward_to_server
+      unless @request.uri.host
+        http_error(400, 'Bad Request', 'No Host Specificed')
+        return
+      end
+
+      request_callback
+      @r_callback_done = true
+      establish_backend_connection(@request.uri.host, @request.uri.port) unless @backend
+      @backend.send_data(@request.to_s)
+    rescue => e
+      Chuck.log_error(e)
+      http_error(400, 'Bad Request', 'Error parsing request')
+    end
+
     def forward_to_client response
       response_callback(response)
       response.save
@@ -145,21 +160,6 @@ module Chuck
           http_error(504, 'Gateway Timeout', 'Backend closed connection or timed out')
         end
       end
-    end
-
-    def forward_to_server
-      unless @request.uri.host
-        http_error(400, 'Bad Request', 'No Host Specificed')
-        return
-      end
-
-      request_callback
-      @r_callback_done = true
-      establish_backend_connection(@request.uri.host, @request.uri.port) unless @backend
-      @backend.send_data(@request.to_s)
-    rescue => e
-      Chuck.log_error(e)
-      http_error(400, 'Bad Request', 'Error parsing request')
     end
 
     def absolute_uri uri
