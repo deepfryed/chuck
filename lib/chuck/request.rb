@@ -1,5 +1,8 @@
 module Chuck
   class Request < Swift::Scheme
+
+    FORM_DATA = %r{multipart/form-data|application/x-www-form-urlencoded}i
+
     store :requests
     attribute :id,         Swift::Type::Integer,  key: true, serial: true
     attribute :session_id, Swift::Type::String
@@ -34,6 +37,10 @@ module Chuck
       rel += "?#{abs.query}" if abs.query
       rel  = '/' + rel unless %r{^/}.match(rel)
       rel
+    end
+
+    def form_data?
+      !!headers.find {|f, v| FORM_DATA.match(v)}
     end
 
     def http_headers

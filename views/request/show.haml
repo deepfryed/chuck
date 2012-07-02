@@ -16,7 +16,11 @@
     %tr
       %td Content
       %td
-        %pre= resource.body
+        %pre
+          - if resource.form_data?
+            != resource.body
+          - else
+            != resource.body.unpack("H*").first
     %tr
       %td Curl
       %td
