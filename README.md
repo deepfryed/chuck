@@ -73,10 +73,6 @@ To get around those, add Chuck's cerificate as a trusted authority in your brows
 * The proxy always intercepts SSL requests even if there is no remap of request, this is not ideal.
 * There is no proxy keep-alive support yet.
 
-# TODO
-
-* Display request, response stuff in realtime using eventsource & sinatra
-
 # See Also
 [https://github.com/igrigorik/em-proxy](https://github.com/igrigorik/em-proxy)
 
