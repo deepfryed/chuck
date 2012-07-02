@@ -22,3 +22,11 @@ module Chuck
     end
   end # self
 end # Chuck
+
+require 'uri'
+
+class URI::HTTP
+  def relative_uri
+    (fragment && fragment.size > 0 ? request_uri + '#' + fragment : request_uri).sub %r{^/}, ''
+  end
+end

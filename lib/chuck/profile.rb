@@ -63,7 +63,7 @@ module Chuck
         end
 
         capture(uri: from) do |request|
-          request.uri = to
+          request.uri = to + request.relative_uri
           callback.call(request) if callback
         end
       end

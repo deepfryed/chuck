@@ -32,6 +32,14 @@ module Chuck
       end
     end
 
+    # Data from client
+    def receive_data data
+      @parser << data
+    rescue => e
+      Chuck.log_error(e)
+      http_error(400, 'Invalid Headers')
+    end
+
     def on_url url
       @request.uri = parse_url(@request.uri, url)
     end
@@ -71,14 +79,6 @@ module Chuck
         @pending += 1
         forward_to_server
       end
-    end
-
-    # Data from client
-    def receive_data data
-      @parser << data
-    rescue => e
-      Chuck.log_error(e)
-      http_error(400, 'Invalid Headers')
     end
 
     def parse_url base, url
