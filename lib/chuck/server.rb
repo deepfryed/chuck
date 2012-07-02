@@ -36,7 +36,7 @@ module Chuck
         stream.run
 
         Multiplexer.listen(host, port, profile: @profile, channel: stream.channel)
-        Thin::Server.start(host, port + 1, Chuck::Web)
+        Thin::Server.start(host, port + 1, Rack::CommonLogger.new(Chuck::Web))
 
         puts "Chuck::Server - listening on #{ip}:#{port}"
         puts "Chuck::Web    - listening on #{ip}:#{port + 1}"
