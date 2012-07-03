@@ -70,8 +70,15 @@ module Chuck
 
     def intercept
       @parser.reset
-      profile.process!(@request)
-      @request.save
+
+      catch(:halt) { pre_process }
+
+      # if a profile intercepted it and passed request along to a rack style app, we
+      # should already have a response
+      if response = @request.response
+        forward_to_client(response)
+        return
+      end
 
       if @request.connect?
         http_connect
@@ -79,6 +86,14 @@ module Chuck
         @pending += 1
         forward_to_server
       end
+    end
+
+    def pre_process
+      profile.process!(@request)
+      @request.save
+    rescue => e
+      Chuck.log_error(e)
+      http_error(502, 'Proxy Filter Error', e.message)
     end
 
     def parse_url base, url
@@ -132,9 +147,10 @@ module Chuck
         return
       end
 
-      request_callback
       @r_callback_done = true
       establish_backend_connection(@request.uri.host, @request.uri.port) unless @backend
+
+      request_callback
       @backend.send_data(@request.to_s)
     rescue => e
       Chuck.log_error(e)

@@ -5,7 +5,7 @@ module Chuck
     include Enumerable
     extend Forwardable
 
-    def_delegators :content, :reject!
+    def_delegators :content, :reject!, :<<
 
     attr_reader :content
 

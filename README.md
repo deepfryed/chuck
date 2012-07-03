@@ -39,6 +39,9 @@ scope 'www.google.com', 443 do
     response.headers.replace 'X-FooBar-Key', 'test'
   end
 end
+
+mock 'http://www.cnn.com', Class.new(Sinatra::Base) { get(%r{/.*}) { 'hot news'} }
+
 ```
 
 ## Running
@@ -50,6 +53,7 @@ end
 # terminal/screen 2
 curl -v -k --proxy 127.0.0.1:8080 http://www.google.com/hello-world
 curl -v -k --proxy 127.0.0.1:8080 https://www.google.com/
+curl -v -k --proxy 127.0.0.1:8080 http://www.cnn.com/
 ```
 
 ## Logs

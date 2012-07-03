@@ -31,3 +31,5 @@ on_response do |response|
   print  "%s %d  " % [response.status, response.body.bytesize]
   puts   $/, '-' * 80
 end
+
+mock 'http://www.cnn.com', Class.new(Sinatra::Base) { get(%r{/.*}) { 'hot news'} }

@@ -1,5 +1,6 @@
 require 'zlib'
 require 'stringio'
+require 'rack/utils'
 
 module Chuck
   class Response < Swift::Scheme
@@ -29,7 +30,7 @@ module Chuck
     end
 
     def to_s
-      r  = "HTTP/#{version} #{status}\r\n"
+      r  = "HTTP/#{version} #{status} #{::Rack::Utils::HTTP_STATUS_CODES[status]}\r\n"
       r += http_headers + "\r\n"
       r += http_body
     end
