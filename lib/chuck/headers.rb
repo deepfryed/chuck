@@ -1,6 +1,11 @@
+require 'forwardable'
+
 module Chuck
   class Headers
     include Enumerable
+    extend Forwardable
+
+    def_delegators :content, :reject!
 
     attr_reader :content
 

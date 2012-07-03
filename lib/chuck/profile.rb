@@ -64,7 +64,11 @@ module Chuck
 
         capture(uri: from) do |request|
           request.uri = to + request.relative_uri
-          callback.call(request) if callback
+          begin
+            callback.call(request) if callback
+          rescue => e
+            Chuck.log_error(e)
+          end
         end
       end
 
