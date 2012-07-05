@@ -44,7 +44,7 @@ module Chuck
           crt.subject    = subject
           crt.issuer     = ca.subject
           crt.not_before = Time.now
-          crt.not_after  = Time.now + 365 * 24 * 60 * 60
+          crt.not_after  = Time.now + 86_400 * 365
           crt.public_key = rsa.public_key
           crt.serial     = (Time.now.to_f * 100).to_i
           crt.version    = 3
@@ -52,12 +52,10 @@ module Chuck
           ef = OpenSSL::X509::ExtensionFactory.new
           ef.subject_certificate = crt
           ef.issuer_certificate  = ca
-          crt.extensions = [
-            ef.create_extension('basicConstraints', 'CA:TRUE', true),
-            ef.create_extension('subjectKeyIdentifier', 'hash'),
-          ]
 
-          crt.sign rsa, OpenSSL::Digest::SHA1.new
+          crt.add_extension(ef.create_extension("keyUsage","digitalSignature", true))
+          crt.add_extension(ef.create_extension("subjectKeyIdentifier","hash",false))
+          crt.sign rsa, OpenSSL::Digest::SHA256.new
         end
       end
   end # SSL

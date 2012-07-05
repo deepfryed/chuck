@@ -13,23 +13,19 @@ scope 'www.google.com', 443 do
 end
 
 on_request 'github.com' do |request|
-  print  "%s - "   % Time.now.strftime('%F %T')
-  print  "%5s %s " % [request.method, request.uri]
+  print request.session_id, ": ", request.uri, $/
 end
 
 on_response 'github.com' do |response|
-  print  "%s %d %s" % [response.status, response.body.bytesize, response.headers.select {|k, v| k == 'Server'}]
-  puts   $/, '-' * 80
+  print response.session_id, ": ", response.status, $/
 end
 
 on_request do |request|
-  print  "%s - "   % Time.now.strftime('%F %T')
-  print  "%5s %s " % [request.method, request.uri]
+  puts request.uri
 end
 
 on_response do |response|
-  print  "%s %d  " % [response.status, response.body.bytesize]
-  puts   $/, '-' * 80
+  puts response.status
 end
 
 mock 'http://www.cnn.com', Class.new(Sinatra::Base) { get(%r{/.*}) { 'hot news'} }

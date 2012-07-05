@@ -13,6 +13,7 @@ module Chuck
       rules.each do |condition, processor|
         processor.call(request) if condition.match?(request)
       end
+      nil
     end
 
     def callbacks
@@ -54,7 +55,7 @@ module Chuck
         capture(uri: from_re(from)) do |request|
           response = Rack.response(*app.call(Rack.request(request)))
           response.update(request_id: request.id, session_id: request.session_id)
-          throw :halt
+          throw :halt, response
         end
       end
 

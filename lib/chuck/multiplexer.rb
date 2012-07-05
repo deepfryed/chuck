@@ -70,17 +70,12 @@ module Chuck
 
     def intercept
       @parser.reset
+      response = catch(:halt) { pre_process }
 
-      catch(:halt) { pre_process }
-
-      # if a profile intercepted it and passed request along to a rack style app, we
-      # should already have a response
-      if response = @request.response
+      if Response === response
+        request_callback
         forward_to_client(response)
-        return
-      end
-
-      if @request.connect?
+      elsif @request.connect?
         http_connect
       else
         @pending += 1
@@ -147,7 +142,6 @@ module Chuck
         return
       end
 
-      @r_callback_done = true
       establish_backend_connection(@request.uri.host, @request.uri.port) unless @backend
 
       request_callback
@@ -175,6 +169,7 @@ module Chuck
     end
 
     def request_callback
+      @r_callback_done = true
       if callback = profile.callbacks[:request][@request.uri.host] || profile.callbacks[:request][nil]
         begin
           callback.call(@request)
