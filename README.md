@@ -15,7 +15,8 @@ redirect or rewrite them using simple callbacks.
 Install dbic++ with sqlite3 first
 
 * https://github.com/deepfryed/dbicpp#debian
-* https://github.com/deepfryed/dbicpp#macosx (`brew install https://raw.github.com/deepfryed/dbicpp/master/brew/dbicpp.rb`)
+* https://github.com/deepfryed/dbicpp#macosx 
+  `brew install https://raw.github.com/deepfryed/dbicpp/master/brew/dbicpp.rb`
 
 Install the gem dependencies next
 
