@@ -70,12 +70,9 @@ module Chuck
 
     def intercept
       @parser.reset
-      response = catch(:halt) { pre_process }
+      pre_process
 
-      if Response === response
-        request_callback
-        forward_to_client(response)
-      elsif @request.connect?
+      if @request.connect?
         http_connect
       else
         @pending += 1
@@ -83,12 +80,44 @@ module Chuck
       end
     end
 
+    def catch_halt
+      response = catch(:halt) { yield }
+      if Response === response
+        forward_to_client(response)
+      end
+    end
+
     def pre_process
-      profile.process!(@request)
+      catch_halt {profile.process!(@request)}
       @request.save
     rescue => e
       Chuck.log_error(e)
       http_error(502, 'Proxy Filter Error', e.message)
+    end
+
+    def request_callback
+      return if @r_callback_done
+
+      @r_callback_done = true
+      if callback = profile.callbacks[:request][@request.uri.host] || profile.callbacks[:request][nil]
+        begin
+          catch_halt {callback.call(@request)}
+        rescue => e
+          Chuck.log_error(e)
+          http_error(504, 'Gateway Timeout', 'Backend closed connection or timed out')
+        end
+      end
+    end
+
+    def response_callback response
+      if callback = profile.callbacks[:response][@request.uri.host] || profile.callbacks[:response][nil]
+        begin
+          callback.call(response)
+        rescue => e
+          Chuck.log_error(e)
+          http_error(504, 'Gateway timeout')
+        end
+      end
     end
 
     def parse_url base, url
@@ -125,17 +154,6 @@ module Chuck
       OpenSSL::X509::Name.new(subject)
     end
 
-    def response_callback response
-      if callback = profile.callbacks[:response][@request.uri.host] || profile.callbacks[:response][nil]
-        begin
-          callback.call(response)
-        rescue => e
-          Chuck.log_error(e)
-          http_error(504, 'Gateway timeout')
-        end
-      end
-    end
-
     def forward_to_server
       unless @request.uri.host
         http_error(400, 'Bad Request', 'No Host Specificed')
@@ -165,18 +183,6 @@ module Chuck
       end
       if @pending > 0
         http_error(504, 'Gateway timeout', 'Backend closed connection')
-      end
-    end
-
-    def request_callback
-      @r_callback_done = true
-      if callback = profile.callbacks[:request][@request.uri.host] || profile.callbacks[:request][nil]
-        begin
-          callback.call(@request)
-        rescue => e
-          Chuck.log_error(e)
-          http_error(504, 'Gateway Timeout', 'Backend closed connection or timed out')
-        end
       end
     end
 
@@ -214,7 +220,7 @@ module Chuck
       response = @request.response || Response.create(request_id: @request.id, session_id: @session.id)
       response.update(status: code, body: message)
 
-      request_callback unless @r_callback_done
+      request_callback
       response_callback(response)
 
       http_response(code, status, message)

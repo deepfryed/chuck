@@ -43,6 +43,13 @@ module Chuck
         callbacks[:response][host] = callback
       end
 
+      def halt_request request, status, headers, body
+        body     = [body] unless body.respond_to?(:each)
+        response = Rack.response(status, headers, body)
+        response.update(request_id: request.id, session_id: request.session_id)
+        throw :halt, response
+      end
+
       def rules
         @rules ||= []
       end
