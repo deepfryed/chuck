@@ -96,9 +96,9 @@ module Chuck
     end
 
     def request_callback
-      return if @r_callback_done
+      return if @req_callback_done
+      @req_callback_done = true
 
-      @r_callback_done = true
       if callback = profile.callbacks[:request][@request.uri.host] || profile.callbacks[:request][nil]
         begin
           catch_halt {callback.call(@request)}
@@ -110,9 +110,12 @@ module Chuck
     end
 
     def response_callback response
+      return if @res_callback_done
+      @res_callback_done = true
+
       if callback = profile.callbacks[:response][@request.uri.host] || profile.callbacks[:response][nil]
         begin
-          callback.call(response)
+          catch_halt {callback.call(response)}
         rescue => e
           Chuck.log_error(e)
           http_error(504, 'Gateway timeout')
