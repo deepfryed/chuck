@@ -2,6 +2,7 @@ require 'chuck'
 require 'openssl'
 require 'tempfile'
 require 'fileutils'
+require 'zlib'
 
 # adapted from webrick/ssl
 module Chuck
@@ -46,15 +47,17 @@ module Chuck
           crt.not_before = Time.now
           crt.not_after  = Time.now + 86_400 * 365
           crt.public_key = rsa.public_key
-          crt.serial     = (Time.now.to_f * 100).to_i
-          crt.version    = 3
+          crt.serial     = Zlib.crc32(subject.to_s)
+          crt.version    = 2
 
           ef = OpenSSL::X509::ExtensionFactory.new
           ef.subject_certificate = crt
           ef.issuer_certificate  = ca
 
-          crt.add_extension(ef.create_extension("keyUsage","digitalSignature", true))
-          crt.add_extension(ef.create_extension("subjectKeyIdentifier","hash",false))
+          crt.add_extension(ef.create_extension("keyUsage","digitalSignature",  true))
+          crt.add_extension(ef.create_extension("subjectKeyIdentifier","hash",  false))
+          crt.add_extension(ef.create_extension("basicConstraints", "CA:FALSE", false))
+          crt.add_extension(ef.create_extension("authorityKeyIdentifier","keyid:always",false))
           crt.sign rsa, OpenSSL::Digest::SHA256.new
         end
       end

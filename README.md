@@ -70,7 +70,14 @@ To get around those, add Chuck's cerificate as a trusted authority in your brows
 
 * iPhone, Android: navigate to the CA url displayed on console when you run Chuck
 * Firefox, etc: Add `certs/server.crt` to your trusted certificates list
-* openssl: Copy `certs/server.crt` to your openssl certs directory and create a symlink to it called `12ffb88a.0`
+* openssl on debian:
+
+```
+sudo cp certs/server.crt /etc/ssl/certs/chuck-proxy.pem
+cd /etc/ssl/certs
+sudo ln -s chuck-proxy.pem `openssl x509 -noout -hash -in chuck-proxy.pem`.0
+cd -
+```
 
 ## Notes
 
