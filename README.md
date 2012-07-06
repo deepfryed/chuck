@@ -15,7 +15,7 @@ redirect or rewrite them using simple callbacks.
 Install dbic++ with sqlite3 first
 
 * https://github.com/deepfryed/dbicpp#debian
-* https://github.com/deepfryed/dbicpp#macosx
+* https://github.com/deepfryed/dbicpp#macosx  (brew install https://raw.github.com/deepfryed/dbicpp/master/brew/dbicpp.rb)
 
 ```
 bundle --path gems --binstubs
@@ -41,6 +41,10 @@ scope 'www.google.com', 443 do
 end
 
 mock 'http://www.cnn.com', Class.new(Sinatra::Base) { get(%r{/.*}) { 'hot news'} }
+
+on_request 'example.com' do |request|
+  halt_request(request, 200, {}, 'hello world!')
+end
 
 ```
 
