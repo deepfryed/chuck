@@ -1,8 +1,6 @@
 module Chuck
   class Request < Swift::Scheme
 
-    FORM_DATA = %r{multipart/form-data|application/x-www-form-urlencoded}i
-
     store :requests
     attribute :id,         Swift::Type::Integer,  key: true, serial: true
     attribute :session_id, Swift::Type::String
@@ -39,8 +37,12 @@ module Chuck
       rel
     end
 
-    def form_data?
-      !!headers.find {|f, v| FORM_DATA.match(v)}
+    def text?
+      !!headers.find {|f, v| %r{content-type}i.match(f) && %r{^text/}i.match(v)}
+    end
+
+    def image?
+      !!headers.find {|f, v| %r{content-type}i.match(f) && %r{^image/}i.match(v)}
     end
 
     def http_headers
@@ -66,10 +68,6 @@ module Chuck
     # TODO: helpers that don't actually belong here
     def lifetime
       response && response.created_at ? response.created_at - created_at : 0
-    end
-
-    def content_type
-      response && response.content_type
     end
 
     def status

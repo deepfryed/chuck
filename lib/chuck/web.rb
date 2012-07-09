@@ -1,4 +1,5 @@
 require 'haml'
+require 'base64'
 require 'yajl/json_gem'
 require 'sinatra/base'
 require 'sinatra/content'
@@ -35,6 +36,12 @@ module Chuck
     get '/request/:id' do |id|
       @resource = Request.get(id: id) or raise Sinatra::NotFound
       haml :'request/show'
+    end
+
+    get '/request/:id/body' do |id|
+      resource = Request.get(id: id) or raise Sinatra::NotFound
+      content_type resource.content_type
+      resource.body
     end
 
     get '/response/:id' do |id|

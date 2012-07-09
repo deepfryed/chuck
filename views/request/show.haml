@@ -16,11 +16,12 @@
     %tr
       %td Content
       %td
-        %pre
-          - if resource.form_data?
-            != resource.body
-          - else
-            != resource.body.unpack("H*").first
+        - if resource.text?
+          %pre!= resource.body
+        - elsif resource.image?
+          %img{src: url(:request, resource.id, :body)}
+        - else
+          %pre!= Base64.encode64(resource.body)
     %tr
       %td Curl
       %td
