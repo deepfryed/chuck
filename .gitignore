@@ -7,3 +7,4 @@ profiles/*
 tmp/
 *.sqlite3
 *.sqlite
+*.db
