@@ -69,6 +69,10 @@ module Chuck
       pair && pair.last
     end
 
+    def content_length
+      body && body.bytesize
+    end
+
     def image?
       !!%r{^image/}.match(content_type)
     end
