@@ -45,8 +45,11 @@ module Chuck
       !!headers.find {|f, v| %r{content-type}i.match(f) && %r{^image/}i.match(v)}
     end
 
+    # remove dupes, since strict request parsers will bomb out on duplicate keys.
     def http_headers
-      headers.map {|pair| pair.join(': ') + "\r\n"}.join
+      seen = Hash.new(0)
+      list = headers.entries.reverse.select {|key, value| seen[key] > 0 ? false : seen[key] += 1}.reverse
+      list.map {|pair| pair.join(': ') + "\r\n"}.join
     end
 
     def connect?

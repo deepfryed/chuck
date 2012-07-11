@@ -8,22 +8,23 @@ require 'zlib'
 module Chuck
   class SSL
 
-    RSA = Chuck.root + 'certs/server.key'
-    CA  = Chuck.root + 'certs/server.crt'
+    RSA  = Chuck.root + 'certs/server.key'
+    CA   = Chuck.root + 'certs/server.crt'
+    SKIP = %r{authorityKeyIdentifier|subjectKeyIdentifier|crlDistributionPoints|certificatePolicies|authorityInfoAccess}
 
     attr_reader :rsa, :ca
 
-    def self.certificate subject
+    def self.certificate subject, cert
       @certs               ||= {}
-      @certs[subject.to_s] ||= new(subject)
+      @certs[subject.to_s] ||= new(subject, cert)
     end
 
-    def initialize subject
+    def initialize subject, cert
       @rsa = OpenSSL::PKey::RSA.new(File.read(RSA))
       @ca  = OpenSSL::X509::Certificate.new(File.read(CA))
 
       @crt = Dir::Tmpname.create('chuck-crt') {}
-      IO.write(@crt, create(subject).to_pem)
+      IO.write(@crt, create(subject, cert).to_pem)
       ObjectSpace.define_finalizer(self, method(:finalize))
     end
 
@@ -40,7 +41,7 @@ module Chuck
     end
 
     private
-      def create subject
+      def create subject, cert
         OpenSSL::X509::Certificate.new.tap do |crt|
           crt.subject    = subject
           crt.issuer     = ca.subject
@@ -54,10 +55,13 @@ module Chuck
           ef.subject_certificate = crt
           ef.issuer_certificate  = ca
 
-          crt.add_extension(ef.create_extension("keyUsage","digitalSignature",  true))
+          cert.extensions.each do |extension|
+            next if SKIP.match(extension.oid)
+            crt.add_extension(extension)
+          end
+
           crt.add_extension(ef.create_extension("subjectKeyIdentifier","hash",  false))
-          crt.add_extension(ef.create_extension("basicConstraints", "CA:FALSE", false))
-          crt.add_extension(ef.create_extension("authorityKeyIdentifier","keyid:always",false))
+          crt.add_extension(ef.create_extension("authorityKeyIdentifier", "keyid:always,issuer:always", false))
           crt.sign rsa, OpenSSL::Digest::SHA256.new
         end
       end

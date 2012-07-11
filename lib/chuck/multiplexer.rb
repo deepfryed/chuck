@@ -145,16 +145,17 @@ module Chuck
     def start_ssl certificate
       http_response(200, "Connected")
       if @request.ssl?
-        @ssl = SSL.certificate(subject_for(certificate))
+        @ssl = SSL.certificate(*sign_for(certificate))
         start_tls(cert_chain_file: @ssl.certificate_file, private_key_file: @ssl.private_key_file, verify_peer: false)
       end
     end
 
-    def subject_for certificate
-      subject = OpenSSL::X509::Certificate.new(certificate).subject.to_a
+    def sign_for certificate
+      cert    = OpenSSL::X509::Certificate.new(certificate)
+      subject = cert.subject.to_a
       subject = subject.to_a.map {|value| value.take(2)}.reject {|f, v| f == 'CN'}
       subject << ['CN', @request.uri.host]
-      OpenSSL::X509::Name.new(subject)
+      return OpenSSL::X509::Name.new(subject), cert
     end
 
     def forward_to_server
