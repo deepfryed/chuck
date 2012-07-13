@@ -130,7 +130,7 @@ module Chuck
         when %r{^https?://}i
           URI.parse(url)
         else
-          base + url
+          base + url.sub(%r{\A/+}, '/')
       end
     end
 
