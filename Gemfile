@@ -1,6 +1,8 @@
 source :rubygems
 
 gem 'eventmachine'
+gem 'em-websocket'
+gem 'em-http-request'
 gem 'http-parser-lite'
 gem 'thin'
 gem 'sinatra'
@@ -8,7 +10,6 @@ gem 'foreman'
 gem 'yajl-ruby'
 gem 'cuuid'
 gem 'swift'
+gem 'swift-db-sqlite3'
 gem 'haml'
-gem 'sinatra'
 gem 'rdiscount'
-gem 'em-websocket'

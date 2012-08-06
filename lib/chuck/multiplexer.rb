@@ -99,6 +99,9 @@ module Chuck
       return if @req_callback_done
       @req_callback_done = true
 
+      # TODO: why does url parsing fail ?
+      return if @request.uri.nil? or @request.uri.host.nil?
+
       if callback = profile.callbacks[:request][@request.uri.host] || profile.callbacks[:request][nil]
         begin
           catch_halt {callback.call(@request)}

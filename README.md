@@ -12,11 +12,14 @@ redirect or rewrite them using simple callbacks.
 
 ## Setup
 
-Install dbic++ with sqlite3 first
+* Install sqlite3 development libraries
 
-* https://github.com/deepfryed/dbicpp#debian
-* https://github.com/deepfryed/dbicpp#macosx 
-  `brew install https://raw.github.com/deepfryed/dbicpp/master/brew/dbicpp.rb`
+```
+# OSX
+brew install sqlite3
+# debian
+sudo apt-get install libsqlite3-dev
+```
 
 Install the gem dependencies next
 
@@ -54,6 +57,13 @@ end
 ## Running
 
 ```
+./bin/chuck -p <port> -f <profile>
+```
+
+## The 'Hello World' Chuck Example
+
+
+```
 # terminal/screen 1
 ./bin/foreman start
 
@@ -66,7 +76,6 @@ curl -v -k --proxy 127.0.0.1:8080 http://www.cnn.com/
 ## Logs
 
 Go to [http://localhost:8081/](http://localhost:8081/) or whatever url chuck displays.
-
 
 ## Chuck SSL CA
 
@@ -86,10 +95,10 @@ sudo ln -s chuck-proxy.pem `openssl x509 -noout -hash -in chuck-proxy.pem`.0
 cd -
 ```
 
-## Notes
+## TODO
 
-* The proxy always intercepts SSL requests even if there is no remap of request, this is not ideal.
-* There is no proxy keep-alive support yet.
+* Keep alive support
+* SSL proxying without interception
 
 # See Also
 [https://github.com/igrigorik/em-proxy](https://github.com/igrigorik/em-proxy)

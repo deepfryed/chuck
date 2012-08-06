@@ -1,17 +1,22 @@
 require 'zlib'
 require 'stringio'
 require 'rack/utils'
+require 'chuck/headers'
+require 'yajl'
 
 module Chuck
-  class Response < Swift::Scheme
+  class Response < Swift::Record
     store :responses
     attribute :id,         Swift::Type::Integer,  key: true, serial: true
     attribute :request_id, Swift::Type::Integer
     attribute :session_id, Swift::Type::String
+
+    # http status, version, headers, body
     attribute :status,     Swift::Type::Integer
-    attribute :version,    Swift::Type::String # http version
+    attribute :version,    Swift::Type::String
     attribute :headers,    Swift::Type::String, default: proc { Headers.new }
     attribute :body,       Swift::Type::String
+
     attribute :created_at, Swift::Type::DateTime
 
     def self.load tuple

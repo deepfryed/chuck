@@ -1,15 +1,21 @@
+require 'chuck/headers'
+require 'yajl'
+
 module Chuck
-  class Request < Swift::Scheme
+  class Request < Swift::Record
 
     store :requests
     attribute :id,         Swift::Type::Integer,  key: true, serial: true
     attribute :session_id, Swift::Type::String
     attribute :rewritten,  Swift::Type::Boolean
+
+    # http method, uri, version, headers, body
     attribute :method,     Swift::Type::String
     attribute :uri,        Swift::Type::String
-    attribute :version,    Swift::Type::String # http version
+    attribute :version,    Swift::Type::String
     attribute :headers,    Swift::Type::String,   default: proc { Headers.new }
     attribute :body,       Swift::Type::String
+
     attribute :created_at, Swift::Type::DateTime, default: proc { DateTime.now }
 
     def self.load tuple
