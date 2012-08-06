@@ -12,7 +12,7 @@ redirect or rewrite them using simple callbacks.
 
 ## Setup
 
-* Install sqlite3 development libraries
+Install sqlite3 development libraries
 
 ```
 # OSX
