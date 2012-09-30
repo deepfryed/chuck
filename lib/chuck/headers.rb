@@ -37,5 +37,10 @@ module Chuck
     def each &block
       content.each(&block)
     end
+
+    def << pair
+      raise ArgumentError, "expected a key-value pair" unless Array === pair && pair.size == 2
+      content << pair.map(&:to_s)
+    end
   end # Headers
 end # Chuck
