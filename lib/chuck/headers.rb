@@ -42,5 +42,13 @@ module Chuck
       raise ArgumentError, "expected a key-value pair" unless Array === pair && pair.size == 2
       content << pair.map(&:to_s)
     end
+
+    def [] key
+      content.find {|k, v| k == key}
+    end
+
+    def to_http_header
+      content.map {|pair| pair.join(': ') + "\r\n"}.join
+    end
   end # Headers
 end # Chuck
