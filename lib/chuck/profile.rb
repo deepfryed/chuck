@@ -85,7 +85,7 @@ module Chuck
           when Regexp
             from
           when %r{^https?://}i
-            %r{^#{from}}
+            %r{^#{Regexp.escape(from)}}
           else
             raise ArgumentError, "from needs to be a Regexp or http:// or https:// uri"
         end

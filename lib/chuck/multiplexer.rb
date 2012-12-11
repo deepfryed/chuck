@@ -167,9 +167,8 @@ module Chuck
         return
       end
 
-      establish_backend_connection(@request.uri.host, @request.uri.port) unless @backend
-
       request_callback
+      establish_backend_connection(@request.uri.host, @request.uri.port) unless @backend
       @backend.send_data(@request.to_s)
     rescue => e
       Chuck.log_error(e)
